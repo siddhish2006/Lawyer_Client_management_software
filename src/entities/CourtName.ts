@@ -1,0 +1,21 @@
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
+import { CourtComplex } from "./CourtComplex";
+import { Case } from "./Case";
+
+@Entity("court_name_master")
+export class CourtName {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column({ unique: true })
+  name!: string;
+
+  @ManyToOne(() => CourtComplex, c => c.courts)
+  complex!: CourtComplex;
+
+  @Column({ default: true })
+  is_active!: boolean;
+
+  @OneToMany(() => Case, c => c.court_name)
+  cases!: Case[];
+}
