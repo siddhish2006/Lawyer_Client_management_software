@@ -4,6 +4,8 @@ import {
   IsString,
   IsDateString,
   Length,
+  IsArray,
+  IsIn,
 } from "class-validator";
 
 /**
@@ -38,4 +40,24 @@ export class UpdateHearingDTO {
   @IsOptional()
   @IsString()
   requirements?: string;
+
+  //----------------------------------
+  // Notification Preferences
+  //----------------------------------
+
+  /**
+   * Assistant-selected notification channels.
+   *
+   * Examples:
+   * ["email","whatsapp"]
+   * ["email","sms"]
+   *
+   * When hearing date changes,
+   * these preferences will be used
+   * for reschedule notifications.
+   */
+  @IsOptional()
+  @IsArray()
+  @IsIn(["email", "whatsapp", "sms"], { each: true })
+  notification_channels?: string[];
 }

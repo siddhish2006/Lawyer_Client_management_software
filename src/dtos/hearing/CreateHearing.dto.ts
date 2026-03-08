@@ -4,6 +4,8 @@ import {
   IsString,
   IsDateString,
   Length,
+  IsArray,
+  IsIn,
 } from "class-validator";
 
 /**
@@ -31,7 +33,7 @@ export class CreateHearingDTO {
   //----------------------------------
 
   @IsDateString()
-  hearing_date!: string; 
+  hearing_date!: string;
   // ISO string is frontend-safe (e.g. "2026-03-15")
 
   @IsOptional()
@@ -42,4 +44,23 @@ export class CreateHearingDTO {
   @IsOptional()
   @IsString()
   requirements?: string;
+
+  //----------------------------------
+  // Notification Preferences
+  //----------------------------------
+
+  /**
+   * Channels selected by the assistant in the frontend.
+   *
+   * Examples:
+   * ["email","whatsapp"]
+   * ["email","sms"]
+   *
+   * Backend will still validate these against
+   * client contact availability.
+   */
+  @IsOptional()
+  @IsArray()
+  @IsIn(["email","whatsapp","sms"], { each: true })
+  notification_channels?: string[];
 }

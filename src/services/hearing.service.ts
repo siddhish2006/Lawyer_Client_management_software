@@ -9,18 +9,18 @@ import { NotificationService } from "./notification.service";
 
 /**
  * HearingService
- * ==============
- * FULL DB-READY SERVICE
  *
- * - Uses transactions
- * - Handles reminders correctly
- * - Safe for production
+ * Responsible for:
+ * - Hearing lifecycle
+ * - Database persistence
+ * - Triggering notification workflows
  */
 export class HearingService {
 
   // ----------------------------------
   // CREATE HEARING
   // ----------------------------------
+
   static async createHearing(dto: CreateHearingDTO) {
 
     if (!dto.case_id) {
@@ -49,9 +49,16 @@ export class HearingService {
 
       const saved = await hearingRepo.save(hearing);
 
-      // Side effects
-      await NotificationService.notifyHearingCreated(saved);
-      await NotificationService.scheduleReminders(saved);
+      /**
+       * Trigger notification workflow
+       * Notification service handles:
+       * - sending immediate notification
+       * - scheduling reminder
+       */
+      await NotificationService.notifyHearingCreated(
+        saved,
+        dto.notification_channels || ["email","whatsapp"]
+      );
 
       return saved;
     });
@@ -60,6 +67,7 @@ export class HearingService {
   // ----------------------------------
   // UPDATE HEARING
   // ----------------------------------
+
   static async updateHearing(id: number, dto: UpdateHearingDTO) {
 
     if (!id || isNaN(id)) {
@@ -82,7 +90,9 @@ export class HearingService {
 
       const oldDate = hearing.hearing_date.getTime();
 
+      // Case change
       if (dto.case_id) {
+
         const newCase = await caseRepo.findOne({
           where: { case_id: dto.case_id },
         });
@@ -94,6 +104,7 @@ export class HearingService {
         hearing.case = newCase;
       }
 
+      // Date update
       if (dto.hearing_date) {
         hearing.hearing_date = new Date(dto.hearing_date);
       }
@@ -108,10 +119,18 @@ export class HearingService {
 
       const updated = await hearingRepo.save(hearing);
 
-      // Date changed → reset reminders
+      /**
+       * If hearing date changed
+       * → notify client
+       * → reset reminders
+       */
       if (dto.hearing_date && updated.hearing_date.getTime() !== oldDate) {
-        await NotificationService.notifyHearingRescheduled(updated);
-        await NotificationService.resetReminders(updated);
+
+        await NotificationService.notifyHearingRescheduled(
+          updated,
+          dto.notification_channels || ["email","whatsapp"]
+        );
+
       }
 
       return updated;
@@ -121,6 +140,7 @@ export class HearingService {
   // ----------------------------------
   // GET HEARING BY ID
   // ----------------------------------
+
   static async getHearingById(id: number) {
 
     if (!id || isNaN(id)) {
@@ -144,6 +164,7 @@ export class HearingService {
   // ----------------------------------
   // LIST HEARINGS
   // ----------------------------------
+
   static async listHearings(filters: any) {
 
     const hearingRepo = AppDataSource.getRepository(Hearing);
@@ -176,6 +197,7 @@ export class HearingService {
   // ----------------------------------
   // DELETE HEARING
   // ----------------------------------
+
   static async deleteHearing(id: number) {
 
     if (!id || isNaN(id)) {
