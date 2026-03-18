@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from "typeorm";
 import { Client } from "./Client";
 import { CaseDefendant } from "./CaseDefendant";
 
@@ -8,6 +8,7 @@ export class Defendant {
   defendant_id!: number;
 
   @ManyToOne(() => Client, c => c.defendant_links, { nullable: true })
+  @JoinColumn({ name: "client_id" })
   client!: Client | null;
 
   @Column()

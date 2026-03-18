@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from "typeorm";
 import { District } from "./District";
 import { CourtName } from "./CourtName";
 import { Case } from "./Case";
@@ -12,6 +12,7 @@ export class CourtComplex {
   name!: string;
 
   @ManyToOne(() => District, d => d.complexes)
+  @JoinColumn({ name: "district_id" })
   district!: District;
 
   @Column({ default: true })

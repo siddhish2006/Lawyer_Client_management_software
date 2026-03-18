@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from "typeorm";
 import { CaseCategory } from "./CaseCategory";
 import { CaseType } from "./CaseType";
 import { CaseStatus } from "./CaseStatus";
@@ -26,21 +26,27 @@ export class Case {
   registration_date!: Date;
 
   @ManyToOne(() => CaseCategory, c => c.cases)
+  @JoinColumn({ name: "case_category_id" })
   case_category!: CaseCategory;
 
   @ManyToOne(() => CaseType, c => c.cases)
+  @JoinColumn({ name: "case_type_id" })
   case_type!: CaseType;
 
   @ManyToOne(() => CaseStatus, c => c.cases)
+  @JoinColumn({ name: "case_status_id" })
   case_status!: CaseStatus;
 
   @ManyToOne(() => District, d => d.cases)
+  @JoinColumn({ name: "district_id" })
   district!: District;
 
   @ManyToOne(() => CourtComplex, c => c.cases)
+  @JoinColumn({ name: "court_complex_id" })
   court_complex!: CourtComplex;
 
   @ManyToOne(() => CourtName, c => c.cases)
+  @JoinColumn({ name: "court_name_id" })
   court_name!: CourtName;
 
   @Column({ type: "text", nullable: true })

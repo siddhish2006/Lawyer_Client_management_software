@@ -1,0 +1,112 @@
+### ========================================
+### CLIENT MANAGEMENT API - TEST SUITE
+### ========================================
+### Click "Send Request" above each endpoint to test
+### Base URL: http://localhost:3000
+
+### ========================================
+### 1. HEALTH CHECK
+### ========================================
+
+### GET - Health Check
+GET http://localhost:3000
+Content-Type: application/json
+
+###
+
+### ========================================
+### 2. CLIENT ENDPOINTS
+### ========================================
+
+### GET - Get All Clients
+GET http://localhost:3000/clients
+Content-Type: application/json
+
+###
+
+### GET - Get Client by ID
+GET http://localhost:3000/clients/1
+Content-Type: application/json
+
+###
+
+### POST - Create New Client
+POST http://localhost:3000/clients
+Content-Type: application/json
+
+{
+  "full_name": "John Doe",
+  "phone_number": "+91-9876543210",
+  "email": "john.doe@example.com",
+  "address": "123 Main Street, New York",
+  "current_legal_relationship": "Active",
+  "client_typeId": 1
+}
+
+###
+
+### PUT - Update Client
+PUT http://localhost:3000/clients/1
+Content-Type: application/json
+
+{
+  "full_name": "John Doe Updated",
+  "phone_number": "+91-9876543210",
+  "email": "john.updated@example.com",
+  "current_legal_relationship": "Active"
+}
+
+###
+
+### DELETE - Delete Client
+DELETE http://localhost:3000/clients/1
+Content-Type: application/json
+
+###
+
+### ========================================
+### 3. HEARING ENDPOINTS
+### ========================================
+
+### GET - Get All Hearings
+GET http://localhost:3000/hearings
+Content-Type: application/json
+
+###
+
+### GET - Get Hearing by ID
+GET http://localhost:3000/hearings/1
+Content-Type: application/json
+
+###
+
+### POST - Create New Hearing
+POST http://localhost:3000/hearings
+Content-Type: application/json
+
+{
+  "case_id": 1,
+  "hearing_date": "2026-04-15",
+  "purpose": "Case hearing",
+  "requirements": "Documents and evidence"
+}
+
+###
+
+### PUT - Update Hearing
+PUT http://localhost:3000/hearings/1
+Content-Type: application/json
+
+{
+  "hearing_date": "2026-04-20",
+  "purpose": "Rescheduled hearing",
+  "requirements": "Updated documents"
+}
+
+###
+
+### DELETE - Delete Hearing
+DELETE http://localhost:3000/hearings/1
+Content-Type: application/json
+
+###

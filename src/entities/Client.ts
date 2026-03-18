@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from "typeorm";
 import { ClientType } from "./ClientType";
 import { CaseClient } from "./CaseClient";
 import { Defendant } from "./Defendant";
@@ -31,6 +31,7 @@ export class Client {
   address!: string;
 
   @ManyToOne(() => ClientType, ct => ct.clients)
+  @JoinColumn({ name: "client_type_id" })
   client_type!: ClientType;
 
   @Column({ type: "date", nullable: true })

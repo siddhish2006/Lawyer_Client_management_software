@@ -25,6 +25,9 @@ import { CaseDefendant } from "../entities/CaseDefendant";
  * Central TypeORM DataSource.
  * This is the single DB connection used everywhere.
  */
+const isNeonDB = env.DB.HOST.includes("neon.tech");
+const isDev = process.env.NODE_ENV === "development";
+
 export const AppDataSource = new DataSource({
   type: "postgres",
   host: env.DB.HOST,
@@ -33,9 +36,26 @@ export const AppDataSource = new DataSource({
   password: env.DB.PASSWORD,
   database: env.DB.NAME,
 
-  synchronize: true, // Use true in dev; switch to migrations in prod
-  logging: false,
+  // SSL Configuration for Neon
+  ssl: isNeonDB ? { rejectUnauthorized: false } : false,
 
+  // Schema sync - disabled to prevent conflicts
+  // Use migrations in production
+  synchronize: false,
+
+  // Logging - show queries in dev
+  logging: isDev,
+  logger: "simple-console",
+
+  // Connection pool settings
+  extra: {
+    max: 20, // Max connections in pool
+    min: 2, // Min connections in pool
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  },
+
+  // All entities
   entities: [
     User,
     Client,
