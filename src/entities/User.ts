@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 export enum UserStatus {
   Active = "Active",
@@ -15,27 +15,27 @@ export class User {
   @PrimaryGeneratedColumn()
   user_id!: number;
 
-  @Column()
+  @Column({ type: "text", nullable: true })
   full_name!: string;
 
-  @Column({ unique: true })
+  @Column({ type: "text", nullable: true })
   email!: string;
 
-  @Column()
+  @Column({ type: "text", nullable: true })
   phone_number!: string;
 
-  @Column()
+  @Column({ type: "text", nullable: true })
   password_hash!: string;
 
-  @Column({ type: "enum", enum: UserStatus })
+  @Column({ type: "text", nullable: true })
   status!: UserStatus;
 
-  @CreateDateColumn()
+  @Column({ type: "timestamptz", nullable: true })
   created_on!: Date;
 
-  @Column({ type: "timestamp", nullable: true })
+  @Column({ type: "timestamptz", nullable: true })
   last_login!: Date | null;
 
-  @Column({ type: "enum", enum: UserRole })
+  @Column({ type: "text", nullable: true })
   role!: UserRole;
 }

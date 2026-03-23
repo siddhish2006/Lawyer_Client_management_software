@@ -16,6 +16,53 @@ function requireEnv(key: string): string {
 }
 
 /**
+ * Parse DATABASE_URL into components
+ * Format: postgresql://user:password@host:port/database
+ */
+function parseDatabaseUrl(url: string) {
+  // Supports with or without port, with optional query params
+  const match = url.match(/postgresql:\/\/([^:]+):([^@]+)@([^:/]+)(?::(\d+))?\/([^?]+)/);
+  if (!match) {
+    throw new Error("Invalid DATABASE_URL format. Expected: postgresql://user:password@host[:port]/database");
+  }
+  return {
+    user: match[1],
+    password: match[2],
+    host: match[3],
+    port: match[4] ? Number(match[4]) : 5432,
+    database: match[5],
+  };
+}
+
+/**
+ * Get database configuration
+ * Supports both DATABASE_URL and individual env vars
+ */
+function getDatabaseConfig() {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (databaseUrl) {
+    const parsed = parseDatabaseUrl(databaseUrl);
+    return {
+      HOST: parsed.host,
+      PORT: parsed.port,
+      USER: parsed.user,
+      PASSWORD: parsed.password,
+      NAME: parsed.database,
+    };
+  }
+
+  // Fallback to individual vars
+  return {
+    HOST: requireEnv("DB_HOST"),
+    PORT: Number(requireEnv("DB_PORT")),
+    USER: requireEnv("DB_USER"),
+    PASSWORD: requireEnv("DB_PASSWORD"),
+    NAME: requireEnv("DB_NAME"),
+  };
+}
+
+/**
  * Centralized configuration object.
  * No other file should read process.env directly.
  */
@@ -23,13 +70,7 @@ export const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: Number(process.env.PORT || 3000),
 
-  DB: {
-    HOST: requireEnv("DB_HOST"),
-    PORT: Number(requireEnv("DB_PORT")),
-    USER: requireEnv("DB_USER"),
-    PASSWORD: requireEnv("DB_PASSWORD"),
-    NAME: requireEnv("DB_NAME"),
-  },
+  DB: getDatabaseConfig(),
 
   EMAIL: {
     API_KEY: process.env.EMAIL_API_KEY || "",

@@ -7,10 +7,10 @@ export class District {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ unique: true })
+  @Column({ type: "text", unique: true })
   name!: string;
 
-  @Column({ default: true })
+  @Column({ default: true, nullable: true })
   is_active!: boolean;
 
   @OneToMany(() => CourtComplex, c => c.district)

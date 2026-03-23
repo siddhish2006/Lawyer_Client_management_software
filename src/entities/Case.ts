@@ -16,10 +16,10 @@ export class Case {
   @PrimaryGeneratedColumn()
   case_id!: number;
 
-  @Column()
+  @Column({ type: "text", nullable: true })
   case_number!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   act!: string;
 
   @Column({ type: "date", nullable: true })
@@ -55,10 +55,10 @@ export class Case {
   @Column({ type: "text", nullable: true })
   notes!: string;
 
-  @Column({ type: "timestamp", default: () => "NOW()" })
+  @Column({ type: "timestamptz", nullable: true })
   created_on!: Date;
 
-  @Column({ type: "timestamp", default: () => "NOW()" })
+  @Column({ type: "timestamptz", nullable: true })
   last_updated!: Date;
 
   @OneToMany(() => CaseClient, cc => cc.case)

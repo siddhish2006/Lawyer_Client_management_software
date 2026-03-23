@@ -6,10 +6,10 @@ export class ClientType {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ unique: true })
+  @Column({ type: "text", unique: true })
   name!: string;
 
-  @Column({ default: true })
+  @Column({ default: true, nullable: true })
   is_active!: boolean;
 
   @OneToMany(() => Client, c => c.client_type)

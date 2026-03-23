@@ -27,7 +27,7 @@ export class HearingService {
       throw new ValidationError("case_id is required");
     }
 
-    return AppDataSource.transaction(async (manager) => {
+    const saved = await AppDataSource.transaction(async (manager) => {
 
       const caseRepo = manager.getRepository(Case);
       const hearingRepo = manager.getRepository(Hearing);
@@ -47,21 +47,18 @@ export class HearingService {
         requirements: dto.requirements,
       });
 
-      const saved = await hearingRepo.save(hearing);
-
-      /**
-       * Trigger notification workflow
-       * Notification service handles:
-       * - sending immediate notification
-       * - scheduling reminder
-       */
-      await NotificationService.notifyHearingCreated(
-        saved,
-        dto.notification_channels || ["email","whatsapp"]
-      );
-
-      return saved;
+      return hearingRepo.save(hearing);
     });
+
+    // Notify after transaction commits so relations are queryable
+    await NotificationService.notifyHearingCreated(
+      saved,
+      dto.notification_channels || ["email","whatsapp"]
+    ).catch((err) => {
+      console.error("Notification failed (hearing still created):", err.message);
+    });
+
+    return saved;
   }
 
   // ----------------------------------

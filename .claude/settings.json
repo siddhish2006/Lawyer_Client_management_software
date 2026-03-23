@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pkill:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(python3:*)",
+      "Bash(__NEW_LINE_ab1d459d353db23d__ echo \"\")",
+      "Bash(__NEW_LINE_0ad622710799ffc5__ echo \"\")"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}

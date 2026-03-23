@@ -6,13 +6,13 @@ export class Opponent {
   @PrimaryGeneratedColumn()
   opponent_id!: number;
 
-  @Column()
+  @Column({ type: "text", nullable: true })
   name!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   phone_number!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   email!: string;
 
   @OneToMany(() => CaseOpponent, co => co.opponent)

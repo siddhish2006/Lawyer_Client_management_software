@@ -10,7 +10,7 @@ export class HearingLog {
   @JoinColumn({ name: "case_id" })
   case!: Case;
 
-  @Column({ type: "date" })
+  @Column({ type: "date", nullable: true })
   hearing_date!: Date;
 
   @Column({ type: "text", nullable: true })
@@ -19,6 +19,6 @@ export class HearingLog {
   @Column({ type: "text", nullable: true })
   outcome!: string;
 
-  @Column({ type: "timestamp", default: () => "NOW()" })
+  @Column({ type: "timestamptz", nullable: true })
   logged_on!: Date;
 }

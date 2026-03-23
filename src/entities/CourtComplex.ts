@@ -8,14 +8,14 @@ export class CourtComplex {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ unique: true })
+  @Column({ type: "text", unique: true })
   name!: string;
 
   @ManyToOne(() => District, d => d.complexes)
   @JoinColumn({ name: "district_id" })
   district!: District;
 
-  @Column({ default: true })
+  @Column({ default: true, nullable: true })
   is_active!: boolean;
 
   @OneToMany(() => CourtName, c => c.complex)

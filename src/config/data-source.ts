@@ -20,6 +20,7 @@ import { Opponent } from "../entities/Opponent";
 import { Defendant } from "../entities/Defendant";
 import { CaseOpponent } from "../entities/CaseOpponent";
 import { CaseDefendant } from "../entities/CaseDefendant";
+import { Reminder } from "../entities/reminder";
 
 /**
  * Central TypeORM DataSource.
@@ -39,9 +40,9 @@ export const AppDataSource = new DataSource({
   // SSL Configuration for Neon
   ssl: isNeonDB ? { rejectUnauthorized: false } : false,
 
-  // Schema sync - disabled to prevent conflicts
-  // Use migrations in production
-  synchronize: false,
+  // Schema sync - enabled for initial setup
+  // TODO: Disable in production, use migrations
+  synchronize: true,
 
   // Logging - show queries in dev
   logging: isDev,
@@ -74,5 +75,6 @@ export const AppDataSource = new DataSource({
     Defendant,
     CaseOpponent,
     CaseDefendant,
+    Reminder,
   ],
 });

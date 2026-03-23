@@ -233,7 +233,7 @@ export class NotificationService {
   /**
    * EMAIL (Replace later with real provider)
    */
-  private static async sendEmail(payload: {
+  static async sendEmail(payload: {
     subject: string;
     body: string;
   }) {

@@ -15,19 +15,19 @@ export class Client {
   @PrimaryGeneratedColumn()
   client_id!: number;
 
-  @Column()
+  @Column({ type: "text", nullable: true })
   full_name!: string;
 
-  @Column()
+  @Column({ type: "text", nullable: true })
   phone_number!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   whatsapp_number!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   email!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   address!: string;
 
   @ManyToOne(() => ClientType, ct => ct.clients)
@@ -37,16 +37,16 @@ export class Client {
   @Column({ type: "date", nullable: true })
   date_of_association!: Date;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   primary_practice_area!: string;
 
-  @Column({ type: "enum", enum: ClientRelationship })
+  @Column({ type: "text", nullable: true })
   current_legal_relationship!: ClientRelationship;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   referred_by!: string;
 
-  @Column({ type: "timestamp", default: () => "NOW()" })
+  @Column({ type: "timestamptz", nullable: true })
   added_on!: Date;
 
   @OneToMany(() => CaseClient, cc => cc.client)

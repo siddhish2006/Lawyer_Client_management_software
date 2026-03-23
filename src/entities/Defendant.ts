@@ -11,13 +11,13 @@ export class Defendant {
   @JoinColumn({ name: "client_id" })
   client!: Client | null;
 
-  @Column()
+  @Column({ type: "text", nullable: true })
   name!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   phone_number!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   email!: string;
 
   @OneToMany(() => CaseDefendant, cd => cd.defendant)
