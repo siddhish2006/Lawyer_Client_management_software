@@ -1,26 +1,27 @@
 import { IsString, IsOptional, IsBoolean, IsNumber } from "class-validator";
 
 /**
- * CreateCourtComplexDTO
+ * UpdateCourtComplexDTO
  *
- * Validates data for creating a court complex.
- * Requires district_id FK.
+ * All fields optional for partial update.
  */
-export class CreateCourtComplexDTO {
+export class UpdateCourtComplexDTO {
 
   //----------------------------------
   // Master Fields
   //----------------------------------
 
+  @IsOptional()
   @IsString()
-  name!: string;
+  name?: string;
 
   //----------------------------------
   // Foreign Key
   //----------------------------------
 
+  @IsOptional()
   @IsNumber()
-  district_id!: number;
+  district_id?: number;
 
   //----------------------------------
   // Optional

@@ -6,7 +6,13 @@
       "Bash(node:*)",
       "Bash(python3:*)",
       "Bash(__NEW_LINE_ab1d459d353db23d__ echo \"\")",
-      "Bash(__NEW_LINE_0ad622710799ffc5__ echo \"\")"
+      "Bash(__NEW_LINE_0ad622710799ffc5__ echo \"\")",
+      "Read(//home/sounak/programming/extras/Lawyer_Client_management_software/**)",
+      "Bash(\"src/validators/party.validator.ts\":*)",
+      "Bash(\"src/services/case-category.service.ts\":*)",
+      "Bash(\"src/controllers/case-category.controller.ts\":*)",
+      "Bash(\"src/controllers/case-type.controller.ts\":*)",
+      "Bash(\"src/controllers/court-complex.controller.ts\":*)"
     ],
     "additionalDirectories": [
       "/tmp"

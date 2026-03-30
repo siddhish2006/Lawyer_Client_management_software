@@ -1,8 +1,9 @@
 import { IsString, IsOptional, IsEmail } from "class-validator";
 
-export class CreateOpponentDTO {
+export class UpdateOpponentDTO {
+  @IsOptional()
   @IsString()
-  name: string;
+  name?: string;
 
   @IsOptional()
   @IsString()

@@ -74,9 +74,6 @@ class DatabaseConnection {
     try {
       const queryRunner = AppDataSource.createQueryRunner();
 
-      const tables = await queryRunner.getTables();
-      const tableNames = tables.map((t) => t.name);
-
       const requiredTables = [
         "users",
         "clients",
@@ -95,9 +92,16 @@ class DatabaseConnection {
         "defendants",
         "case_opponents",
         "case_defendants",
+        "reminders",
       ];
 
-      const missingTables = requiredTables.filter((t) => !tableNames.includes(t));
+      const result: { table_name: string }[] = await queryRunner.query(
+        `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN (${requiredTables.map(t => `'${t}'`).join(', ')})`
+      );
+
+      const existingTables = result.map(t => t.table_name);
+      const missingTables = requiredTables.filter(t => !existingTables.includes(t));
+
 
       if (missingTables.length > 0) {
         logger.warn(`⚠️  Missing tables: ${missingTables.join(", ")}`);

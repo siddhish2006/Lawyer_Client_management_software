@@ -42,19 +42,11 @@ export const AppDataSource = new DataSource({
 
   // Schema sync - enabled for initial setup
   // TODO: Disable in production, use migrations
-  synchronize: true,
+  synchronize: false,
 
   // Logging - show queries in dev
   logging: isDev,
   logger: "simple-console",
-
-  // Connection pool settings
-  extra: {
-    max: 20, // Max connections in pool
-    min: 2, // Min connections in pool
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-  },
 
   // All entities
   entities: [
