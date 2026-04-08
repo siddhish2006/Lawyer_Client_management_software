@@ -8,11 +8,7 @@ export class HearingController {
   //----------------------------------
   static async create(req: Request, res: Response) {
     const hearing = await HearingService.createHearing(req.body);
-
-    res.status(201).json({
-      success: true,
-      data: hearing,
-    });
+    res.status(201).json(hearing);
   }
 
   //----------------------------------
@@ -20,13 +16,8 @@ export class HearingController {
   //----------------------------------
   static async update(req: Request, res: Response) {
     const id = Number(req.params.id);
-
     const hearing = await HearingService.updateHearing(id, req.body);
-
-    res.json({
-      success: true,
-      data: hearing,
-    });
+    res.json(hearing);
   }
 
   //----------------------------------
@@ -34,13 +25,8 @@ export class HearingController {
   //----------------------------------
   static async getById(req: Request, res: Response) {
     const id = Number(req.params.id);
-
     const hearing = await HearingService.getHearingById(id);
-
-    res.json({
-      success: true,
-      data: hearing,
-    });
+    res.json(hearing);
   }
 
   //----------------------------------
@@ -48,11 +34,7 @@ export class HearingController {
   //----------------------------------
   static async list(req: Request, res: Response) {
     const hearings = await HearingService.listHearings(req.query);
-
-    res.json({
-      success: true,
-      data: hearings,
-    });
+    res.json(hearings);
   }
 
   //----------------------------------

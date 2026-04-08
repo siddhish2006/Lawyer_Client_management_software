@@ -17,6 +17,9 @@ export class Case {
   case_id!: number;
 
   @Column({ type: "text", nullable: true })
+  title!: string;
+
+  @Column({ type: "text", nullable: true })
   case_number!: string;
 
   @Column({ type: "text", nullable: true })

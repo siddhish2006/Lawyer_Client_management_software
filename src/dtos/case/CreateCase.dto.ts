@@ -29,6 +29,10 @@ export class CreateCaseDTO {
 
   @IsOptional()
   @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
   act?: string;
 
   @IsOptional()

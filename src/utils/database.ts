@@ -44,6 +44,9 @@ class DatabaseConnection {
         // Validate essential tables exist
         await this.validateSchema();
 
+        // Apply idempotent schema patches (light migrations)
+        await this.runSchemaPatches();
+
         return this.instance;
       } catch (error) {
         logger.error(
@@ -113,6 +116,30 @@ class DatabaseConnection {
       await queryRunner.release();
     } catch (error) {
       logger.warn("⚠️  Could not validate schema:", error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  /**
+   * Idempotent Schema Patches
+   * Adds new columns / constraints introduced after the initial schema.
+   * Safe to run on every startup.
+   */
+  private static async runSchemaPatches(): Promise<void> {
+    try {
+      const queryRunner = AppDataSource.createQueryRunner();
+
+      // Add `title` column to cases (introduced for case title display)
+      await queryRunner.query(
+        `ALTER TABLE cases ADD COLUMN IF NOT EXISTS title TEXT`
+      );
+
+      logger.success("✓ Schema patches applied");
+      await queryRunner.release();
+    } catch (error) {
+      logger.warn(
+        "⚠️  Schema patch failed:",
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
 

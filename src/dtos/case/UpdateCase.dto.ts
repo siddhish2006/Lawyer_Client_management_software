@@ -24,6 +24,10 @@ export class UpdateCaseDTO {
 
   @IsOptional()
   @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
   act?: string;
 
   @IsOptional()

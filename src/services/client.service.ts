@@ -169,14 +169,30 @@ export class ClientService {
         dto: Partial<CreateClientDTO>
     ): Promise<Client> {
         const clientRepo = this.getClientRepo();
+        const clientTypeRepo = this.getClientTypeRepo();
 
         const client = await this.getClientById(id);
 
         //--------------------------------------------------
-        // Merge DTO into existing entity
+        // client_type_id is the join column for the
+        // client_type relation, NOT a column on the entity.
+        // Object.assign would silently no-op it, so resolve
+        // the relation explicitly.
         //--------------------------------------------------
 
-        Object.assign(client, dto);
+        const { client_type_id, ...rest } = dto;
+
+        if (client_type_id !== undefined) {
+            const clientType = await clientTypeRepo.findOne({
+                where: { id: client_type_id }
+            });
+            if (!clientType) {
+                throw new AppError("Invalid client type", 400);
+            }
+            client.client_type = clientType;
+        }
+
+        Object.assign(client, rest);
 
         return clientRepo.save(client);
     }

@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import hearingRoutes from "./routes/hearing.routes";
 import clientRoutes from "./routes/client.routes";
 import caseRoutes from "./routes/case.routes";
@@ -17,6 +18,29 @@ import { errorMiddleware } from "./middlewares/error.middleware";
 import { dbHealthCheck, attachDatabase } from "./middlewares/db.middleware";
 
 const app = express();
+
+// CORS — allow frontend dev origins (configurable via CORS_ORIGIN csv)
+const allowedOrigins = (
+  process.env.CORS_ORIGIN ??
+  "http://localhost:3000,http://localhost:3001,http://localhost:3002"
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // allow non-browser requests (curl, server-to-server) which have no origin
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+        return cb(null, true);
+      }
+      return cb(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
