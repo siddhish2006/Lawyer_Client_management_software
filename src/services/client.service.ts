@@ -142,6 +142,12 @@ export class ClientService {
             });
         }
 
+        if (filters.client_type_id) {
+            qb.andWhere("clientType.id = :ctid", {
+                ctid: Number(filters.client_type_id)
+            });
+        }
+
         //--------------------------------------------------
         // Pagination
         //--------------------------------------------------

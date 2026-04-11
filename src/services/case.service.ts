@@ -224,6 +224,26 @@ export class CaseService {
       );
     }
 
+    if (filters.category_id) {
+      qb.andWhere("case_category.id = :catId", { catId: Number(filters.category_id) });
+    }
+
+    if (filters.type_id) {
+      qb.andWhere("case_type.id = :typeId", { typeId: Number(filters.type_id) });
+    }
+
+    if (filters.district_id) {
+      qb.andWhere("district.id = :distId", { distId: Number(filters.district_id) });
+    }
+
+    if (filters.court_complex_id) {
+      qb.andWhere("court_complex.id = :ccId", { ccId: Number(filters.court_complex_id) });
+    }
+
+    if (filters.court_name_id) {
+      qb.andWhere("court_name.id = :cnId", { cnId: Number(filters.court_name_id) });
+    }
+
     //----------------------------------
     // Pagination
     //----------------------------------
