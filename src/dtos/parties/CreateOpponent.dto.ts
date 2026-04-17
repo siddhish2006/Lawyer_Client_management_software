@@ -2,7 +2,7 @@ import { IsString, IsOptional, IsEmail } from "class-validator";
 
 export class CreateOpponentDTO {
   @IsString()
-  name: string;
+  name!: string;
 
   @IsOptional()
   @IsString()

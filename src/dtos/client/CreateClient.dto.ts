@@ -11,7 +11,7 @@ export interface CreateClientDTO {
 
   full_name: string;
 
-  phone_number: string;
+  phone_number?: string;
 
   whatsapp_number?: string;
 

@@ -1,16 +1,16 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
-import { Case } from "./Case";
+import { Hearing } from "./Hearing";
 
 @Entity("hearing_logs")
 export class HearingLog {
   @PrimaryGeneratedColumn()
   log_id!: number;
 
-  @ManyToOne(() => Case, c => c.hearing_logs)
-  @JoinColumn({ name: "case_id" })
-  case!: Case;
+  @ManyToOne(() => Hearing, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "hearing_id" })
+  hearing!: Hearing;
 
-  @Column({ type: "date", nullable: true })
+  @Column({ type: "date" })
   hearing_date!: Date;
 
   @Column({ type: "text", nullable: true })
@@ -19,6 +19,6 @@ export class HearingLog {
   @Column({ type: "text", nullable: true })
   outcome!: string;
 
-  @Column({ type: "timestamptz", nullable: true })
+  @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   logged_on!: Date;
 }

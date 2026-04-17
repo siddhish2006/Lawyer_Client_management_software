@@ -3,35 +3,76 @@ import { Reminder } from "../entities/reminder";
 import { NotificationService } from "../services/notification.service";
 
 export async function runDailyReminderJob() {
-
   const reminderRepo = AppDataSource.getRepository(Reminder);
+  const queryRunner = AppDataSource.createQueryRunner();
+  await queryRunner.connect();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  try {
+    await queryRunner.startTransaction();
 
-  const reminders = await reminderRepo.find({
-    where: {
-      reminder_date: today,
-      sent: false,
-    },
-    relations: {
-      hearing: {
-        case: true,
-      },
-    },
-  });
+    const claimedRows: Array<{ reminder_id: number }> = await queryRunner.query(
+      `
+        WITH due_reminders AS (
+          SELECT reminder_id
+          FROM reminders
+          WHERE reminder_date <= CURRENT_TIMESTAMP
+            AND is_sent = false
+            AND is_failed = false
+            AND (
+              is_processing = false
+              OR processing_started_at IS NULL
+              OR processing_started_at < CURRENT_TIMESTAMP - ($1 * INTERVAL '1 minute')
+            )
+          FOR UPDATE SKIP LOCKED
+        )
+        UPDATE reminders r
+        SET is_processing = true,
+            processing_started_at = CURRENT_TIMESTAMP
+        FROM due_reminders d
+        WHERE r.reminder_id = d.reminder_id
+        RETURNING r.reminder_id
+      `,
+      [NotificationService.getProcessingTimeoutMinutes()]
+    );
 
-  for (const reminder of reminders) {
+    await queryRunner.commitTransaction();
 
-    // EMAIL ONLY — business rule
-    await NotificationService.sendEmail({
-      subject: "Upcoming Court Hearing Reminder",
-      body: `Reminder: You have a hearing scheduled on ${reminder.hearing.hearing_date}.`,
-    });
+    const claimedReminderIds = claimedRows.map((row) => Number(row.reminder_id));
+    const reminders =
+      claimedReminderIds.length > 0
+        ? await reminderRepo.find({
+            where: claimedReminderIds.map((reminder_id) => ({ reminder_id })),
+            relations: {
+              hearing: true,
+            },
+          })
+        : [];
 
-    reminder.sent = true;
-    await reminderRepo.save(reminder);
+    let sentCount = 0;
+
+    for (const reminder of reminders) {
+      try {
+        const delivered = await NotificationService.sendScheduledReminder(reminder);
+
+        if (delivered) {
+          sentCount += 1;
+        }
+      } catch (error) {
+        console.error(
+          `Reminder ${reminder.reminder_id} failed:`,
+          error instanceof Error ? error.message : String(error)
+        );
+      }
+    }
+
+    console.log(`Sent ${sentCount} of ${reminders.length} hearing reminders`);
+  } catch (error) {
+    if (queryRunner.isTransactionActive) {
+      await queryRunner.rollbackTransaction();
+    }
+
+    throw error;
+  } finally {
+    await queryRunner.release();
   }
-
-  console.log(`✅ Sent ${reminders.length} hearing reminders`);
 }

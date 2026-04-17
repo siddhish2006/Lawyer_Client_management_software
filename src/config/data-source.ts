@@ -21,6 +21,7 @@ import { Defendant } from "../entities/Defendant";
 import { CaseOpponent } from "../entities/CaseOpponent";
 import { CaseDefendant } from "../entities/CaseDefendant";
 import { Reminder } from "../entities/reminder";
+import { ReminderLog } from "../entities/ReminderLog";
 
 /**
  * Central TypeORM DataSource.
@@ -68,5 +69,6 @@ export const AppDataSource = new DataSource({
     CaseOpponent,
     CaseDefendant,
     Reminder,
+    ReminderLog,
   ],
 });

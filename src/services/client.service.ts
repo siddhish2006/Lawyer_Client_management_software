@@ -2,6 +2,7 @@ import { AppDataSource } from "../config/data-source";
 import { Client } from "../entities/Client";
 import { ClientType } from "../entities/ClientType";
 import { CreateClientDTO } from "../dtos/client/CreateClient.dto";
+import { FiltersDTO } from "../dtos/Filters.dto";
 import { AppError } from "../errors/AppError";
 import { NotFoundError } from "../errors/NotFoundError";
 
@@ -15,6 +16,28 @@ import { NotFoundError } from "../errors/NotFoundError";
  * ONLY services do.
  */
 export class ClientService {
+
+    private static parseBooleanFilter(value: FiltersDTO["has_contact"]): boolean | undefined {
+        if (typeof value === "boolean") {
+            return value;
+        }
+
+        if (typeof value !== "string") {
+            return undefined;
+        }
+
+        const normalized = value.trim().toLowerCase();
+
+        if (["true", "1", "yes"].includes(normalized)) {
+            return true;
+        }
+
+        if (["false", "0", "no"].includes(normalized)) {
+            return false;
+        }
+
+        return undefined;
+    }
 
     /**
      * GET REPOSITORIES (Lazy-loaded after DB init)
@@ -50,15 +73,36 @@ export class ClientService {
         // 2️⃣ Prevent Duplicate Clients
         //--------------------------------------------------
 
-        const existingClient = await clientRepo.findOne({
-            where: [
-                { phone_number: dto.phone_number },
-                { email: dto.email }
-            ]
-        });
+        const duplicateConditions: string[] = [];
+        const duplicateParams: Record<string, string> = {};
 
-        if (existingClient) {
-            throw new AppError("Client already exists with this phone/email", 409);
+        if (dto.phone_number) {
+            duplicateConditions.push("client.phone_number = :phone_number");
+            duplicateParams.phone_number = dto.phone_number;
+        }
+
+        if (dto.whatsapp_number) {
+            duplicateConditions.push("client.whatsapp_number = :whatsapp_number");
+            duplicateParams.whatsapp_number = dto.whatsapp_number;
+        }
+
+        if (dto.email) {
+            duplicateConditions.push("client.email = :email");
+            duplicateParams.email = dto.email;
+        }
+
+        if (duplicateConditions.length > 0) {
+            const existingClient = await clientRepo
+                .createQueryBuilder("client")
+                .where(duplicateConditions.join(" OR "), duplicateParams)
+                .getOne();
+
+            if (existingClient) {
+                throw new AppError(
+                    "Client already exists with this phone, WhatsApp number, or email",
+                    409
+                );
+            }
         }
 
         //--------------------------------------------------
@@ -114,11 +158,17 @@ export class ClientService {
     /**
      * LIST CLIENTS WITH FILTERING
      */
-    static async listClients(filters: any): Promise<Client[]> {
+    static async listClients(filters: FiltersDTO): Promise<Client[]> {
         const clientRepo = this.getClientRepo();
 
         const qb = clientRepo.createQueryBuilder("client")
             .leftJoinAndSelect("client.client_type", "clientType");
+
+        const contactPresenceCondition = `
+            NULLIF(TRIM(COALESCE(client.phone_number, '')), '') IS NOT NULL
+            OR NULLIF(TRIM(COALESCE(client.whatsapp_number, '')), '') IS NOT NULL
+            OR NULLIF(TRIM(COALESCE(client.email, '')), '') IS NOT NULL
+        `;
 
         //--------------------------------------------------
         // Dynamic Filters
@@ -146,6 +196,16 @@ export class ClientService {
             qb.andWhere("clientType.id = :ctid", {
                 ctid: Number(filters.client_type_id)
             });
+        }
+
+        const hasContact = this.parseBooleanFilter(filters.has_contact);
+
+        if (hasContact === true) {
+            qb.andWhere(`(${contactPresenceCondition})`);
+        }
+
+        if (hasContact === false) {
+            qb.andWhere(`NOT (${contactPresenceCondition})`);
         }
 
         //--------------------------------------------------

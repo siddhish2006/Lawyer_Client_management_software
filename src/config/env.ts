@@ -84,4 +84,12 @@ export const env = {
   WHATSAPP: {
     API_KEY: process.env.WHATSAPP_API_KEY || "",
   },
+
+  GUPSHUP: {
+    API_KEY: process.env.GUPSHUP_API_KEY || "",
+    APP_NAME: process.env.GUPSHUP_APP_NAME || "",
+    SOURCE_NUMBER: process.env.GUPSHUP_SOURCE_NUMBER || "",
+    API_BASE_URL: process.env.GUPSHUP_API_BASE_URL || "https://api.gupshup.io",
+    WEBHOOK_TOKEN: process.env.GUPSHUP_WEBHOOK_TOKEN || "",
+  },
 };

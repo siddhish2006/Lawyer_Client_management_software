@@ -7,7 +7,6 @@ import { CourtComplex } from "./CourtComplex";
 import { CourtName } from "./CourtName";
 import { CaseClient } from "./CaseClient";
 import { Hearing } from "./Hearing";
-import { HearingLog } from "./HearingLog";
 import { CaseOpponent } from "./CaseOpponent";
 import { CaseDefendant } from "./CaseDefendant";
 
@@ -69,9 +68,6 @@ export class Case {
 
   @OneToMany(() => Hearing, h => h.case)
   hearings!: Hearing[];
-
-  @OneToMany(() => HearingLog, h => h.case)
-  hearing_logs!: HearingLog[];
 
   @OneToMany(() => CaseOpponent, o => o.case)
   opponents!: CaseOpponent[];

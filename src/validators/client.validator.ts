@@ -20,13 +20,16 @@ export class CreateClientValidator {
   @Length(2, 120)
   full_name!: string;
 
- @Matches(/^[0-9]{10,15}$/, {
-  message: "Phone number must contain only digits (10-15)"
+  @IsOptional()
+  @Matches(/^[0-9]{10,15}$/, {
+    message: "Phone number must contain only digits (10-15)"
   })
-  phone_number!: string;
+  phone_number?: string;
 
   @IsOptional()
-  @IsString()
+  @Matches(/^[0-9]{10,15}$/, {
+    message: "WhatsApp number must contain only digits (10-15)"
+  })
   whatsapp_number?: string;
 
   @IsOptional()

@@ -1,8 +1,8 @@
 import { AppDataSource } from "../config/data-source";
 import { Hearing } from "../entities/Hearing";
 import { Case } from "../entities/Case";
+import { Client } from "../entities/Client";
 import { CreateHearingDTO } from "../dtos/hearing/CreateHearing.dto";
-import { UpdateHearingDTO } from "../dtos/hearing/UpdateHearing.dto";
 import { ValidationError } from "../errors/ValidationError";
 import { NotFoundError } from "../errors/NotFoundError";
 import { NotificationService } from "./notification.service";
@@ -11,33 +11,58 @@ import { NotificationService } from "./notification.service";
  * HearingService
  *
  * Responsible for:
- * - Hearing lifecycle
+ * - Hearing creation, lookup, listing, and deletion
  * - Database persistence
- * - Triggering notification workflows
+ * - Triggering notification workflows after hearing creation
  */
 export class HearingService {
+  private static hasAnyContact(client: Client): boolean {
+    return [client.email, client.phone_number, client.whatsapp_number].some(
+      (value) => typeof value === "string" && value.trim().length > 0
+    );
+  }
 
   // ----------------------------------
   // CREATE HEARING
   // ----------------------------------
 
   static async createHearing(dto: CreateHearingDTO) {
-
     if (!dto.case_id) {
       throw new ValidationError("case_id is required");
     }
 
     const saved = await AppDataSource.transaction(async (manager) => {
-
       const caseRepo = manager.getRepository(Case);
       const hearingRepo = manager.getRepository(Hearing);
 
       const caseEntity = await caseRepo.findOne({
         where: { case_id: dto.case_id },
+        relations: {
+          clients: {
+            client: true,
+          },
+        },
       });
 
       if (!caseEntity) {
         throw new NotFoundError("Case not found");
+      }
+
+      const caseClients = caseEntity.clients
+        .map((link) => link.client)
+        .filter(Boolean);
+
+      const clientsWithContact = caseClients.filter((client) =>
+        this.hasAnyContact(client)
+      );
+      const clientsWithoutContact = caseClients.filter(
+        (client) => !this.hasAnyContact(client)
+      );
+
+      if (clientsWithContact.length === 0) {
+        throw new ValidationError(
+          "Please input at least one contact info for at least one client before creating a hearing."
+        );
       }
 
       const hearing = hearingRepo.create({
@@ -47,91 +72,52 @@ export class HearingService {
         requirements: dto.requirements,
       });
 
-      return hearingRepo.save(hearing);
+      const savedHearing = await hearingRepo.save(hearing);
+      const reminder = await NotificationService.createReminderRecord(
+        manager,
+        savedHearing,
+        dto.notification_channels || ["email", "whatsapp"]
+      );
+
+      return {
+        hearing: savedHearing,
+        reminder,
+        clientsWithoutContact,
+      };
     });
 
-    // Notify after transaction commits so relations are queryable
+    // Try immediate delivery only after the hearing + reminder record commit.
     await NotificationService.notifyHearingCreated(
-      saved,
-      dto.notification_channels || ["email","whatsapp"]
+      saved.reminder,
+      dto.notification_channels || ["email", "whatsapp"]
     ).catch((err) => {
-      console.error("Notification failed (hearing still created):", err.message);
+      console.error(
+        "Immediate reminder delivery failed (hearing and reminder still created):",
+        err.message
+      );
     });
 
-    return saved;
-  }
+    const warnings =
+      saved.clientsWithoutContact.length > 0
+        ? [
+            {
+              code: "MISSING_CO_CLIENT_CONTACT_INFO",
+              message:
+                "Hearing created, but some co-clients do not have any contact info. Reminders will be sent only to co-clients with available contact details.",
+              clients: saved.clientsWithoutContact.map((client) => ({
+                client_id: client.client_id,
+                full_name: client.full_name,
+              })),
+            },
+          ]
+        : [];
 
-  // ----------------------------------
-  // UPDATE HEARING
-  // ----------------------------------
-
-  static async updateHearing(id: number, dto: UpdateHearingDTO) {
-
-    if (!id || isNaN(id)) {
-      throw new ValidationError("Valid hearing ID required");
-    }
-
-    return AppDataSource.transaction(async (manager) => {
-
-      const hearingRepo = manager.getRepository(Hearing);
-      const caseRepo = manager.getRepository(Case);
-
-      const hearing = await hearingRepo.findOne({
-        where: { hearing_id: id },
-        relations: { case: true },
-      });
-
-      if (!hearing) {
-        throw new NotFoundError("Hearing not found");
-      }
-
-      const oldDate = hearing.hearing_date.getTime();
-
-      // Case change
-      if (dto.case_id) {
-
-        const newCase = await caseRepo.findOne({
-          where: { case_id: dto.case_id },
-        });
-
-        if (!newCase) {
-          throw new NotFoundError("Case not found");
-        }
-
-        hearing.case = newCase;
-      }
-
-      // Date update
-      if (dto.hearing_date) {
-        hearing.hearing_date = new Date(dto.hearing_date);
-      }
-
-      if (dto.purpose !== undefined) {
-        hearing.purpose = dto.purpose;
-      }
-
-      if (dto.requirements !== undefined) {
-        hearing.requirements = dto.requirements;
-      }
-
-      const updated = await hearingRepo.save(hearing);
-
-      /**
-       * If hearing date changed
-       * → notify client
-       * → reset reminders
-       */
-      if (dto.hearing_date && updated.hearing_date.getTime() !== oldDate) {
-
-        await NotificationService.notifyHearingRescheduled(
-          updated,
-          dto.notification_channels || ["email","whatsapp"]
-        );
-
-      }
-
-      return updated;
-    });
+    return {
+      success: true,
+      message: "Hearing created successfully",
+      data: saved.hearing,
+      warnings,
+    };
   }
 
   // ----------------------------------
@@ -139,7 +125,6 @@ export class HearingService {
   // ----------------------------------
 
   static async getHearingById(id: number) {
-
     if (!id || isNaN(id)) {
       throw new ValidationError("Valid hearing ID required");
     }
@@ -163,7 +148,6 @@ export class HearingService {
   // ----------------------------------
 
   static async listHearings(filters: any) {
-
     const hearingRepo = AppDataSource.getRepository(Hearing);
 
     const qb = hearingRepo
@@ -196,7 +180,6 @@ export class HearingService {
   // ----------------------------------
 
   static async deleteHearing(id: number) {
-
     if (!id || isNaN(id)) {
       throw new ValidationError("Valid hearing ID required");
     }

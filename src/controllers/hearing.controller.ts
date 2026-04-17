@@ -2,22 +2,12 @@ import { Request, Response } from "express";
 import { HearingService } from "../services/hearing.service";
 
 export class HearingController {
-
   //----------------------------------
   // CREATE HEARING
   //----------------------------------
   static async create(req: Request, res: Response) {
     const hearing = await HearingService.createHearing(req.body);
     res.status(201).json(hearing);
-  }
-
-  //----------------------------------
-  // UPDATE HEARING
-  //----------------------------------
-  static async update(req: Request, res: Response) {
-    const id = Number(req.params.id);
-    const hearing = await HearingService.updateHearing(id, req.body);
-    res.json(hearing);
   }
 
   //----------------------------------

@@ -9,7 +9,6 @@ import { Client } from "../entities/Client";
 import { Defendant } from "../entities/Defendant";
 import { Opponent } from "../entities/Opponent";
 import { Hearing } from "../entities/Hearing";
-import { HearingLog } from "../entities/HearingLog";
 import { NotFoundError } from "../errors/NotFoundError";
 import { ValidationError } from "../errors/ValidationError";
 
@@ -389,8 +388,7 @@ export class CaseService {
       await manager.delete(CaseClient, { case: { case_id: id } });
       await manager.delete(CaseDefendant, { case: { case_id: id } });
       await manager.delete(CaseOpponent, { case: { case_id: id } });
-      await manager.delete(HearingLog, { case: { case_id: id } });
-      // Reminders cascade-delete from hearings
+      // Reminders and hearing logs cascade-delete from hearings
       await manager.delete(Hearing, { case: { case_id: id } });
 
       await caseRepo.remove(caseEntity);

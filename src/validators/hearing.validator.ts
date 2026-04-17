@@ -1,5 +1,4 @@
 import { CreateHearingDTO } from "../dtos/hearing/CreateHearing.dto";
-import { UpdateHearingDTO } from "../dtos/hearing/UpdateHearing.dto";
 
 /**
  * Hearing Validators
@@ -9,4 +8,3 @@ import { UpdateHearingDTO } from "../dtos/hearing/UpdateHearing.dto";
  */
 
 export const CreateHearingValidator = CreateHearingDTO;
-export const UpdateHearingValidator = UpdateHearingDTO;

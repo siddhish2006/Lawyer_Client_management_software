@@ -1,5 +1,5 @@
 export class CreatePartyDTO {
-  name: string;
+  name!: string;
   phone_number?: string;
   email?: string;
 }
