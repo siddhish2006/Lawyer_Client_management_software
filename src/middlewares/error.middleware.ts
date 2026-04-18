@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
+import { logger } from "../utils/logger";
 
 /**
  * Global Error Middleware
@@ -30,7 +31,7 @@ export const errorMiddleware = (
   // Unknown Errors (Programming bugs)
   //----------------------------------
 
-  console.error("UNEXPECTED ERROR:", err);
+  logger.error("UNEXPECTED ERROR", err);
 
   return res.status(500).json({
     success: false,

@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Unique } from "typeorm";
 import { Case } from "./Case";
 import { Client } from "./Client";
 
 @Entity("case_clients")
+@Unique("uq_case_clients_case_client", ["case", "client"])
 export class CaseClient {
   @PrimaryGeneratedColumn()
   id!: number;

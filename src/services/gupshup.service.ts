@@ -1,4 +1,5 @@
 import * as https from "https";
+import * as crypto from "crypto";
 import { stringify } from "querystring";
 import { env } from "../config/env";
 import { ValidationError } from "../errors/ValidationError";
@@ -113,12 +114,126 @@ export class GupshupService {
     const expectedToken = env.GUPSHUP.WEBHOOK_TOKEN.trim();
 
     if (!expectedToken) {
-      return;
+      // Fail-closed: reject if the secret is not configured.
+      throw new ValidationError("Gupshup webhook token is not configured");
     }
 
-    if (!token || token !== expectedToken) {
+    if (!token) {
       throw new ValidationError("Invalid Gupshup webhook token");
     }
+
+    const provided = Buffer.from(token);
+    const expected = Buffer.from(expectedToken);
+
+    if (
+      provided.length !== expected.length ||
+      !crypto.timingSafeEqual(provided, expected)
+    ) {
+      throw new ValidationError("Invalid Gupshup webhook token");
+    }
+  }
+
+  static isSmsConfigured(): boolean {
+    return Boolean(
+      env.GUPSHUP_SMS.USERID &&
+      env.GUPSHUP_SMS.PASSWORD &&
+      env.GUPSHUP_SMS.SOURCE_MASK
+    );
+  }
+
+  static requireSmsConfiguration(): void {
+    if (!this.isSmsConfigured()) {
+      throw new ValidationError(
+        "Gupshup SMS is not configured. Set GUPSHUP_SMS_USERID, GUPSHUP_SMS_PASSWORD, and GUPSHUP_SMS_SOURCE_MASK."
+      );
+    }
+  }
+
+  static async sendSms(
+    destination: string,
+    text: string
+  ): Promise<GupshupSendResult> {
+    this.requireSmsConfiguration();
+
+    const requestUrl = new URL(
+      "/GatewayAPI/rest",
+      env.GUPSHUP_SMS.API_BASE_URL
+    );
+    requestUrl.search = stringify({
+      method: "SendMessage",
+      send_to: this.normalizePhoneNumber(destination),
+      msg: text,
+      msg_type: "TEXT",
+      userid: env.GUPSHUP_SMS.USERID,
+      password: env.GUPSHUP_SMS.PASSWORD,
+      auth_scheme: "plain",
+      v: "1.1",
+      format: "JSON",
+      mask: env.GUPSHUP_SMS.SOURCE_MASK,
+    });
+
+    const responseText = await new Promise<string>((resolve, reject) => {
+      const request = https.request(
+        requestUrl,
+        { method: "GET" },
+        (response) => {
+          let data = "";
+          response.setEncoding("utf8");
+          response.on("data", (chunk) => {
+            data += chunk;
+          });
+          response.on("end", () => {
+            const statusCode = response.statusCode ?? 500;
+            if (statusCode >= 200 && statusCode < 300) {
+              resolve(data);
+              return;
+            }
+            reject(
+              new Error(
+                `Gupshup SMS send failed with status ${statusCode}: ${data || "empty response"}`
+              )
+            );
+          });
+        }
+      );
+      request.on("error", reject);
+      request.end();
+    });
+
+    let parsed: JsonRecord = {};
+    if (responseText.trim().length > 0) {
+      try {
+        const p = JSON.parse(responseText) as unknown;
+        if (this.isRecord(p)) parsed = p;
+      } catch {
+        // Non-JSON response — some Gupshup SMS endpoints return plaintext
+        // like "success | <messageId>". Fall through with empty parsed.
+      }
+    }
+
+    const response =
+      this.isRecord(parsed.response) ? parsed.response : parsed;
+
+    const status =
+      this.getString(response.status)?.toLowerCase() ?? "submitted";
+    const messageId =
+      this.getString(response.id) ??
+      this.getString(response.messageId) ??
+      this.getString(response.msgId);
+
+    if (status === "error" || !messageId) {
+      const reason =
+        this.getString(response.details) ??
+        this.getString(response.message) ??
+        responseText.slice(0, 200);
+      throw new Error(`Gupshup SMS send rejected: ${reason}`);
+    }
+
+    return {
+      providerName: this.PROVIDER_NAME,
+      messageId,
+      providerEventType: status,
+    };
   }
 
   static async sendTextMessage(

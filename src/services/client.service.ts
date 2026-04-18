@@ -212,8 +212,8 @@ export class ClientService {
         // Pagination
         //--------------------------------------------------
 
-        const page = Number(filters.page) || 1;
-        const limit = Number(filters.limit) || 20;
+        const page = Math.max(Number(filters.page) || 1, 1);
+        const limit = Math.min(Math.max(Number(filters.limit) || 20, 1), 100);
 
         qb.skip((page - 1) * limit);
         qb.take(limit);

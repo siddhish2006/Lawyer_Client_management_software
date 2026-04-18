@@ -6,7 +6,30 @@ import {
   Length,
   IsArray,
   IsIn,
+  registerDecorator,
+  ValidationOptions,
 } from "class-validator";
+
+function IsFutureDate(validationOptions?: ValidationOptions) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      name: "isFutureDate",
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any) {
+          if (typeof value !== "string") return false;
+          const d = new Date(value);
+          return !isNaN(d.getTime()) && d.getTime() > Date.now();
+        },
+        defaultMessage() {
+          return "hearing_date must be in the future";
+        },
+      },
+    });
+  };
+}
 
 /**
  * CreateHearingDTO
@@ -33,6 +56,7 @@ export class CreateHearingDTO {
   //----------------------------------
 
   @IsDateString()
+  @IsFutureDate()
   hearing_date!: string;
   // ISO string is frontend-safe (e.g. "2026-03-15")
 

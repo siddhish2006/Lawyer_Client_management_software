@@ -44,9 +44,10 @@ export class CaseService {
       // Validate Clients
       //----------------------------------
 
-      const clients = await clientRepo.findByIds(dto.client_ids);
+      const uniqueClientIds = Array.from(new Set(dto.client_ids));
+      const clients = await clientRepo.findByIds(uniqueClientIds);
 
-      if (clients.length !== dto.client_ids.length) {
+      if (clients.length !== uniqueClientIds.length) {
         throw new ValidationError("One or more clients not found");
       }
 
@@ -57,9 +58,10 @@ export class CaseService {
       let defendants: Defendant[] = [];
 
       if (dto.defendant_ids?.length) {
-        defendants = await defendantRepo.findByIds(dto.defendant_ids);
+        const uniqueDefendantIds = Array.from(new Set(dto.defendant_ids));
+        defendants = await defendantRepo.findByIds(uniqueDefendantIds);
 
-        if (defendants.length !== dto.defendant_ids.length) {
+        if (defendants.length !== uniqueDefendantIds.length) {
           throw new ValidationError("One or more defendants not found");
         }
       }
@@ -71,9 +73,10 @@ export class CaseService {
       let opponents: Opponent[] = [];
 
       if (dto.opponent_ids?.length) {
-        opponents = await opponentRepo.findByIds(dto.opponent_ids);
+        const uniqueOpponentIds = Array.from(new Set(dto.opponent_ids));
+        opponents = await opponentRepo.findByIds(uniqueOpponentIds);
 
-        if (opponents.length !== dto.opponent_ids.length) {
+        if (opponents.length !== uniqueOpponentIds.length) {
           throw new ValidationError("One or more opponents not found");
         }
       }
@@ -247,8 +250,8 @@ export class CaseService {
     // Pagination
     //----------------------------------
 
-    const page = Number(filters.page) || 1;
-    const limit = Number(filters.limit) || 20;
+    const page = Math.max(Number(filters.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(filters.limit) || 20, 1), 100);
 
     qb.skip((page - 1) * limit);
     qb.take(limit);
@@ -315,7 +318,7 @@ export class CaseService {
 
       if (client_ids) {
         await manager.delete(CaseClient, { case: { case_id: id } });
-        for (const clientId of client_ids) {
+        for (const clientId of Array.from(new Set<number>(client_ids))) {
           const link = manager.getRepository(CaseClient).create({
             case: caseEntity,
             client: { client_id: clientId } as any,
@@ -330,7 +333,7 @@ export class CaseService {
 
       if (defendant_ids) {
         await manager.delete(CaseDefendant, { case: { case_id: id } });
-        for (const defendantId of defendant_ids) {
+        for (const defendantId of Array.from(new Set<number>(defendant_ids))) {
           const link = manager.getRepository(CaseDefendant).create({
             case: caseEntity,
             defendant: { defendant_id: defendantId } as any,
@@ -345,7 +348,7 @@ export class CaseService {
 
       if (opponent_ids) {
         await manager.delete(CaseOpponent, { case: { case_id: id } });
-        for (const opponentId of opponent_ids) {
+        for (const opponentId of Array.from(new Set<number>(opponent_ids))) {
           const link = manager.getRepository(CaseOpponent).create({
             case: caseEntity,
             opponent: { opponent_id: opponentId } as any,

@@ -10,6 +10,10 @@ import {
 } from "../entities/ReminderLog";
 import { logger } from "../utils/logger";
 import { GupshupMessageEvent, GupshupService } from "./gupshup.service";
+import { sendEmail } from "../utils/email";
+import { sendWhatsApp } from "../utils/whatsapp";
+import { sendSMS } from "../utils/sms";
+import { ReminderTemplate } from "../utils/templates";
 
 interface ReminderAttemptParams {
   reminder: Reminder;
@@ -168,7 +172,9 @@ export class NotificationService {
       reminder.is_failed = false;
       reminder.failed_at = null;
     } else if (hasPendingAttempts) {
-      reminder.is_sent = true;
+      // Provider hasn't confirmed yet — don't claim delivered.
+      // Daily job will skip re-dispatch via getDispatchedClientIds.
+      reminder.is_sent = false;
       reminder.is_failed = false;
       reminder.failed_at = null;
     } else {
@@ -416,6 +422,9 @@ export class NotificationService {
         this.clientHasAnyContact(client)
       );
       const sentClientIds = await this.getSentClientIds(reminder.hearing);
+      const dispatchedClientIds = await this.getDispatchedClientIds(
+        reminder.hearing
+      );
 
       if (contactableClients.length === 0) {
         for (const client of clients) {
@@ -433,15 +442,25 @@ export class NotificationService {
       }
 
       const pendingClients = contactableClients.filter(
-        (client) => !sentClientIds.has(client.client_id)
+        (client) => !dispatchedClientIds.has(client.client_id)
       );
 
       if (pendingClients.length === 0) {
-        await this.finalizeReminderProcessing(reminder, true);
-        return true;
+        const allConfirmed = contactableClients.every((client) =>
+          sentClientIds.has(client.client_id)
+        );
+        if (allConfirmed) {
+          await this.finalizeReminderProcessing(reminder, true);
+          return true;
+        }
+        // Awaiting provider confirmation on at least one client.
+        // Release the processing lock but keep is_sent=false.
+        reminder.is_processing = false;
+        reminder.processing_started_at = null;
+        await AppDataSource.getRepository(Reminder).save(reminder);
+        return false;
       }
 
-      const subject = "Upcoming Court Hearing Reminder";
       let dispatchedToAllPendingClients = true;
 
       for (const client of pendingClients) {
@@ -459,7 +478,7 @@ export class NotificationService {
           continue;
         }
 
-        const message = this.buildReminderMessage(client, reminder.hearing);
+        const template = this.buildReminderTemplate(client, reminder.hearing);
         let dispatchedToClient = false;
 
         for (const channel of channels) {
@@ -468,12 +487,20 @@ export class NotificationService {
           try {
             switch (channel) {
               case "email":
-                await this.sendEmail({ subject, body: message });
+                if (!client.email) {
+                  throw new Error("Email address is missing for this client");
+                }
+                const emailResult = await sendEmail(client.email, template);
                 await this.logReminderAttempt({
                   reminder,
                   client,
                   channel: reminderChannel,
+                  // Resend webhooks aren't wired yet — accepted = delivered for audit.
                   status: ReminderDeliveryStatus.SENT,
+                  providerName: emailResult.providerName,
+                  providerMessageId: emailResult.messageId,
+                  providerEventType: emailResult.providerEventType,
+                  providerLastEventAt: new Date(),
                 });
                 dispatchedToClient = true;
                 break;
@@ -483,15 +510,16 @@ export class NotificationService {
                   throw new Error("WhatsApp number is missing for this client");
                 }
 
-                const whatsappResult = await this.sendWhatsApp(
+                const whatsappResult = await sendWhatsApp(
                   client.whatsapp_number,
-                  message
+                  template
                 );
 
                 await this.logReminderAttempt({
                   reminder,
                   client,
                   channel: reminderChannel,
+                  // Gupshup webhook will flip this to SENT/FAILED later.
                   status: ReminderDeliveryStatus.PENDING,
                   providerName: whatsappResult.providerName,
                   providerMessageId: whatsappResult.messageId,
@@ -502,12 +530,20 @@ export class NotificationService {
                 break;
 
               case "sms":
-                await this.sendSMS(message);
+                if (!client.phone_number) {
+                  throw new Error("Phone number is missing for this client");
+                }
+                const smsResult = await sendSMS(client.phone_number, template);
                 await this.logReminderAttempt({
                   reminder,
                   client,
                   channel: reminderChannel,
+                  // Gupshup SMS webhook isn't wired — accepted = delivered for audit.
                   status: ReminderDeliveryStatus.SENT,
+                  providerName: smsResult.providerName,
+                  providerMessageId: smsResult.messageId,
+                  providerEventType: smsResult.providerEventType,
+                  providerLastEventAt: new Date(),
                 });
                 dispatchedToClient = true;
                 break;
@@ -569,7 +605,15 @@ export class NotificationService {
       throw new Error("Client not found for hearing");
     }
 
-    return loaded.case.clients.map((link) => link.client).filter(Boolean);
+    // Dedupe defensively in case legacy rows created duplicate links.
+    const seen = new Set<number>();
+    return loaded.case.clients
+      .map((link) => link.client)
+      .filter((client) => {
+        if (!client || seen.has(client.client_id)) return false;
+        seen.add(client.client_id);
+        return true;
+      });
   }
 
   private static async getSentClientIds(hearing: Hearing): Promise<Set<number>> {
@@ -586,21 +630,39 @@ export class NotificationService {
     return new Set(sentLogs.map((log) => log.client.client_id));
   }
 
-  private static buildReminderMessage(client: Client, hearing: Hearing): string {
-    const details = [
-      `Dear ${client.full_name || "Client"},`,
-      `This is a reminder that your hearing is scheduled on ${hearing.hearing_date}.`,
-    ];
+  // Clients that already have a SENT or PENDING attempt — we should not re-dispatch.
+  private static async getDispatchedClientIds(
+    hearing: Hearing
+  ): Promise<Set<number>> {
+    const logs = await AppDataSource.getRepository(ReminderLog).find({
+      where: [
+        {
+          hearing: { hearing_id: hearing.hearing_id },
+          status: ReminderDeliveryStatus.SENT,
+        },
+        {
+          hearing: { hearing_id: hearing.hearing_id },
+          status: ReminderDeliveryStatus.PENDING,
+        },
+      ],
+      relations: {
+        client: true,
+      },
+    });
 
-    if (hearing.purpose) {
-      details.push(`Purpose: ${hearing.purpose}`);
-    }
+    return new Set(logs.map((log) => log.client.client_id));
+  }
 
-    if (hearing.requirements) {
-      details.push(`Requirements: ${hearing.requirements}`);
-    }
-
-    return details.join("\n");
+  private static buildReminderTemplate(
+    client: Client,
+    hearing: Hearing
+  ): ReminderTemplate {
+    return {
+      clientName: client.full_name || "Client",
+      hearingDate: hearing.hearing_date,
+      purpose: hearing.purpose ?? undefined,
+      requirements: hearing.requirements ?? undefined,
+    };
   }
 
   private static toReminderChannel(channel: string): ReminderChannel {
@@ -636,36 +698,5 @@ export class NotificationService {
     await AppDataSource.getRepository(ReminderLog).save(log);
   }
 
-  // ==================================================
-  // TRANSPORT LAYER
-  // ==================================================
-
-  /**
-   * EMAIL (Replace later with real provider)
-   */
-  static async sendEmail(payload: {
-    subject: string;
-    body: string;
-  }) {
-    logger.info("Email reminder dispatched through placeholder transport", {
-      subject: payload.subject,
-      preview: payload.body.slice(0, 80),
-    });
-  }
-
-  /**
-   * WhatsApp via Gupshup
-   */
-  private static async sendWhatsApp(destination: string, message: string) {
-    return GupshupService.sendTextMessage(destination, message);
-  }
-
-  /**
-   * SMS (placeholder)
-   */
-  private static async sendSMS(message: string) {
-    logger.info("SMS reminder dispatched through placeholder transport", {
-      preview: message.slice(0, 80),
-    });
-  }
+  // Transport layer lives in src/utils/{whatsapp,email,sms}.ts
 }

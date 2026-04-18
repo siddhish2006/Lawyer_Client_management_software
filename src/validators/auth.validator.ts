@@ -1,4 +1,8 @@
-import { IsString, IsEmail, MinLength } from "class-validator";
+import { IsString, IsEmail, MinLength, Matches, MaxLength } from "class-validator";
+
+// At least one lowercase, one uppercase, one digit, one special char.
+const STRONG_PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
 
 export class RegisterValidator {
   @IsString()
@@ -9,7 +13,12 @@ export class RegisterValidator {
   email!: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @MaxLength(128)
+  @Matches(STRONG_PASSWORD_REGEX, {
+    message:
+      "password must be at least 8 chars and include uppercase, lowercase, digit, and special character",
+  })
   password!: string;
 }
 
@@ -18,7 +27,8 @@ export class LoginValidator {
   email!: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @MaxLength(128)
   password!: string;
 }
 

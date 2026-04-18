@@ -72,17 +72,9 @@ export const env = {
 
   DB: getDatabaseConfig(),
 
-  EMAIL: {
-    API_KEY: process.env.EMAIL_API_KEY || "",
+  RESEND: {
+    API_KEY: process.env.RESEND_API_KEY || "",
     FROM: process.env.EMAIL_FROM || "noreply@lawoffice.com",
-  },
-
-  SMS: {
-    API_KEY: process.env.SMS_API_KEY || "",
-  },
-
-  WHATSAPP: {
-    API_KEY: process.env.WHATSAPP_API_KEY || "",
   },
 
   GUPSHUP: {
@@ -91,5 +83,14 @@ export const env = {
     SOURCE_NUMBER: process.env.GUPSHUP_SOURCE_NUMBER || "",
     API_BASE_URL: process.env.GUPSHUP_API_BASE_URL || "https://api.gupshup.io",
     WEBHOOK_TOKEN: process.env.GUPSHUP_WEBHOOK_TOKEN || "",
+  },
+
+  GUPSHUP_SMS: {
+    USERID: process.env.GUPSHUP_SMS_USERID || "",
+    PASSWORD: process.env.GUPSHUP_SMS_PASSWORD || "",
+    SOURCE_MASK: process.env.GUPSHUP_SMS_SOURCE_MASK || "",
+    API_BASE_URL:
+      process.env.GUPSHUP_SMS_API_BASE_URL ||
+      "https://enterprise.smsgupshup.com",
   },
 };

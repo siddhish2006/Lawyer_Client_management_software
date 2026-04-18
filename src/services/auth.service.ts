@@ -3,8 +3,7 @@ import { User, UserStatus } from "../entities/User";
 import { RegisterUserDTO } from "../dtos/auth/RegisterUser.dto";
 import { LoginUserDTO } from "../dtos/auth/LoginUser.dto";
 import { ConflictError } from "../errors/ConflictError";
-import { NotFoundError } from "../errors/NotFoundError";
-import { ValidationError } from "../errors/ValidationError";
+import { UnauthorizedError } from "../errors/UnauthorizedError";
 import * as bcrypt from "bcrypt";
 
 const SALT_ROUNDS = 10;
@@ -75,8 +74,15 @@ export class AuthService {
       where: { email: dto.email },
     });
 
+    // Same 401 + identical message whether email missing or password wrong
+    // to prevent account enumeration. Also run a dummy bcrypt.compare
+    // when the user is missing so timing does not leak existence.
+    const DUMMY_HASH =
+      "$2b$10$CwTycUXWue0Thq9StjUM0uJ8.8BCnXG4hKiT3nAU3hS1JhpPvgiHW";
+
     if (!user) {
-      throw new NotFoundError("Invalid email or password");
+      await bcrypt.compare(dto.password, DUMMY_HASH);
+      throw new UnauthorizedError("Invalid email or password");
     }
 
     //----------------------------------
@@ -86,7 +92,7 @@ export class AuthService {
     const isValid = await bcrypt.compare(dto.password, user.password_hash);
 
     if (!isValid) {
-      throw new ValidationError("Invalid email or password");
+      throw new UnauthorizedError("Invalid email or password");
     }
 
     //----------------------------------

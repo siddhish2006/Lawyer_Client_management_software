@@ -15,5 +15,5 @@
     "moduleResolution": "node",
     "lib": ["ES2019"]
   },
-  "exclude": ["node_modules", "dist", "check-db-compatibility.ts"]
+  "exclude": ["node_modules", "dist", "check-db-compatibility.ts", "test-notifications.ts"]
 }

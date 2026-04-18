@@ -172,6 +172,11 @@ export class HearingService {
       });
     }
 
+    const page = Math.max(Number(filters.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(filters.limit) || 20, 1), 100);
+
+    qb.skip((page - 1) * limit).take(limit);
+
     return qb.orderBy("h.hearing_date", "ASC").getMany();
   }
 

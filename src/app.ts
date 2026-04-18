@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import hearingRoutes from "./routes/hearing.routes";
 import clientRoutes from "./routes/client.routes";
 import caseRoutes from "./routes/case.routes";
@@ -19,6 +21,23 @@ import { dbHealthCheck, attachDatabase } from "./middlewares/db.middleware";
 
 const app = express();
 
+app.use(helmet());
+
+const globalRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+});
+
 // CORS — allow frontend dev origins (configurable via CORS_ORIGIN csv)
 const allowedOrigins = (
   process.env.CORS_ORIGIN ??
@@ -28,12 +47,20 @@ const allowedOrigins = (
   .map((s) => s.trim())
   .filter(Boolean);
 
+// `*` with credentials is spec-invalid and unsafe — fail boot so it
+// cannot be deployed by accident.
+if (allowedOrigins.includes("*")) {
+  throw new Error(
+    "CORS_ORIGIN cannot contain '*' while credentials are enabled. Set explicit origins."
+  );
+}
+
 app.use(
   cors({
     origin: (origin, cb) => {
       // allow non-browser requests (curl, server-to-server) which have no origin
       if (!origin) return cb(null, true);
-      if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+      if (allowedOrigins.includes(origin)) {
         return cb(null, true);
       }
       return cb(new Error(`CORS: origin ${origin} not allowed`));
@@ -43,6 +70,8 @@ app.use(
 );
 
 app.use(express.json());
+
+app.use(globalRateLimiter);
 
 // Database middleware (check health + attach instance)
 app.use(dbHealthCheck);
@@ -67,16 +96,16 @@ app.get("/health/db", async (_req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
+    console.error("DB health check failed:", error);
     res.status(503).json({
       status: "ERROR",
       database: "Connection failed",
-      error: error instanceof Error ? error.message : String(error),
     });
   }
 });
 
 // 🔥 ROUTES (THIS IS THE IMPORTANT PART)
-app.use("/auth", authRoutes);
+app.use("/auth", authRateLimiter, authRoutes);
 app.use("/hearings", hearingRoutes);
 app.use("/clients", clientRoutes);
 app.use("/cases", caseRoutes);
