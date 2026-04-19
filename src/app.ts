@@ -15,6 +15,7 @@ import courtNameRoutes from "./routes/court-name.routes";
 import defendantRoutes from "./routes/defendant.routes";
 import districtRoutes from "./routes/district.routes";
 import opponentRoutes from "./routes/opponent.routes";
+import reminderLogRoutes from "./routes/reminder-log.routes";
 import webhookRoutes from "./routes/webhook.routes";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import { dbHealthCheck, attachDatabase } from "./middlewares/db.middleware";
@@ -118,6 +119,7 @@ app.use("/court-names", courtNameRoutes);
 app.use("/defendants", defendantRoutes);
 app.use("/districts", districtRoutes);
 app.use("/opponents", opponentRoutes);
+app.use("/reminder-logs", reminderLogRoutes);
 app.use("/webhooks", webhookRoutes);
 
 // MUST BE LAST

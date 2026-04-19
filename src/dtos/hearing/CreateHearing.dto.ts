@@ -21,10 +21,15 @@ function IsFutureDate(validationOptions?: ValidationOptions) {
         validate(value: any) {
           if (typeof value !== "string") return false;
           const d = new Date(value);
-          return !isNaN(d.getTime()) && d.getTime() > Date.now();
+          if (isNaN(d.getTime())) return false;
+          const today = new Date();
+          today.setUTCHours(0, 0, 0, 0);
+          const day = new Date(d);
+          day.setUTCHours(0, 0, 0, 0);
+          return day.getTime() >= today.getTime();
         },
         defaultMessage() {
-          return "hearing_date must be in the future";
+          return "hearing_date must be today or in the future";
         },
       },
     });
