@@ -247,14 +247,16 @@ export class CaseService {
     }
 
     //----------------------------------
-    // Pagination
+    // Pagination (only applied when caller passes page/limit; searches want
+    // the full set so they can match across every field client-side)
     //----------------------------------
 
-    const page = Math.max(Number(filters.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(filters.limit) || 20, 1), 100);
-
-    qb.skip((page - 1) * limit);
-    qb.take(limit);
+    if (filters.page !== undefined || filters.limit !== undefined) {
+      const page = Math.max(Number(filters.page) || 1, 1);
+      const limit = Math.max(Number(filters.limit) || 20, 1);
+      qb.skip((page - 1) * limit);
+      qb.take(limit);
+    }
 
     qb.orderBy("case.created_on", "DESC");
 

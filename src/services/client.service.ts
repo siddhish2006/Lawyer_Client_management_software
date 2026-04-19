@@ -209,14 +209,16 @@ export class ClientService {
         }
 
         //--------------------------------------------------
-        // Pagination
+        // Pagination (applied only when caller passes page/limit; sidebar
+        // searches need the full set)
         //--------------------------------------------------
 
-        const page = Math.max(Number(filters.page) || 1, 1);
-        const limit = Math.min(Math.max(Number(filters.limit) || 20, 1), 100);
-
-        qb.skip((page - 1) * limit);
-        qb.take(limit);
+        if (filters.page !== undefined || filters.limit !== undefined) {
+            const page = Math.max(Number(filters.page) || 1, 1);
+            const limit = Math.max(Number(filters.limit) || 20, 1);
+            qb.skip((page - 1) * limit);
+            qb.take(limit);
+        }
 
         //--------------------------------------------------
         // Sorting
