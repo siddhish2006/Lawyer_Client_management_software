@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import hearingRoutes from "./routes/hearing.routes";
+import hearingLogRoutes from "./routes/hearing-log.routes";
 import clientRoutes from "./routes/client.routes";
 import caseRoutes from "./routes/case.routes";
 import authRoutes from "./routes/auth.routes";
@@ -108,6 +109,7 @@ app.get("/health/db", async (_req, res) => {
 // 🔥 ROUTES (THIS IS THE IMPORTANT PART)
 app.use("/auth", authRateLimiter, authRoutes);
 app.use("/hearings", hearingRoutes);
+app.use("/hearing-logs", hearingLogRoutes);
 app.use("/clients", clientRoutes);
 app.use("/cases", caseRoutes);
 app.use("/case-categories", caseCategoryRoutes);
