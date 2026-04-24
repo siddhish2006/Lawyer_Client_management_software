@@ -152,13 +152,13 @@ export class HearingService {
 
     const qb = hearingRepo
       .createQueryBuilder("h")
-      .leftJoinAndSelect("h.case", "case")
-      .leftJoinAndSelect("case.court_name", "court_name")
-      .leftJoinAndSelect("case.clients", "case_clients")
+      .leftJoinAndSelect("h.case", "c")
+      .leftJoinAndSelect("c.court_name", "court_name")
+      .leftJoinAndSelect("c.clients", "case_clients")
       .leftJoinAndSelect("case_clients.client", "client");
 
     if (filters.case_id) {
-      qb.andWhere("case.case_id = :caseId", {
+      qb.andWhere("c.case_id = :caseId", {
         caseId: filters.case_id,
       });
     }

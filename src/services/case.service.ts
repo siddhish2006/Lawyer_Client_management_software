@@ -185,32 +185,32 @@ export class CaseService {
 
     const caseRepo = AppDataSource.getRepository(Case);
 
-    const qb = caseRepo.createQueryBuilder("case")
-      .leftJoinAndSelect("case.clients", "case_clients")
+    const qb = caseRepo.createQueryBuilder("c")
+      .leftJoinAndSelect("c.clients", "case_clients")
       .leftJoinAndSelect("case_clients.client", "client")
-      .leftJoinAndSelect("case.defendants", "case_defendants")
+      .leftJoinAndSelect("c.defendants", "case_defendants")
       .leftJoinAndSelect("case_defendants.defendant", "defendant")
-      .leftJoinAndSelect("case.opponents", "case_opponents")
+      .leftJoinAndSelect("c.opponents", "case_opponents")
       .leftJoinAndSelect("case_opponents.opponent", "opponent")
-      .leftJoinAndSelect("case.case_category", "case_category")
-      .leftJoinAndSelect("case.case_type", "case_type")
-      .leftJoinAndSelect("case.case_status", "case_status")
-      .leftJoinAndSelect("case.district", "district")
-      .leftJoinAndSelect("case.court_complex", "court_complex")
-      .leftJoinAndSelect("case.court_name", "court_name");
+      .leftJoinAndSelect("c.case_category", "case_category")
+      .leftJoinAndSelect("c.case_type", "case_type")
+      .leftJoinAndSelect("c.case_status", "case_status")
+      .leftJoinAndSelect("c.district", "district")
+      .leftJoinAndSelect("c.court_complex", "court_complex")
+      .leftJoinAndSelect("c.court_name", "court_name");
 
     //----------------------------------
     // Filtering
     //----------------------------------
 
     if (filters.case_number) {
-      qb.andWhere("LOWER(case.case_number) LIKE LOWER(:num)", {
+      qb.andWhere("LOWER(c.case_number) LIKE LOWER(:num)", {
         num: `%${filters.case_number}%`
       });
     }
 
     if (filters.status_id) {
-      qb.andWhere("case.case_status_id = :status", {
+      qb.andWhere("c.case_status_id = :status", {
         status: filters.status_id
       });
     }
@@ -221,7 +221,7 @@ export class CaseService {
 
     if (filters.client_id) {
       qb.andWhere(
-        "case.case_id IN (SELECT cc.case_id FROM case_clients cc WHERE cc.client_id = :cid)",
+        "c.case_id IN (SELECT cc.case_id FROM case_clients cc WHERE cc.client_id = :cid)",
         { cid: Number(filters.client_id) }
       );
     }
@@ -258,7 +258,7 @@ export class CaseService {
       qb.take(limit);
     }
 
-    qb.orderBy("case.created_on", "DESC");
+    qb.orderBy("c.created_on", "DESC");
 
     const cases = await qb.getMany();
     return cases.map(flattenCase);
