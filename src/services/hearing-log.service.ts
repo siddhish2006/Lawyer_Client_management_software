@@ -26,7 +26,7 @@ export class HearingLogService {
     const qb = repo
       .createQueryBuilder("log")
       .leftJoinAndSelect("log.hearing", "hearing")
-      .leftJoinAndSelect("hearing.case", "case");
+      .leftJoinAndSelect("hearing.case", "c");
 
     if (filters.hearing_id) {
       qb.andWhere("hearing.hearing_id = :hid", {
@@ -35,7 +35,7 @@ export class HearingLogService {
     }
 
     if (filters.case_id) {
-      qb.andWhere("case.case_id = :cid", {
+      qb.andWhere("c.case_id = :cid", {
         cid: Number(filters.case_id),
       });
     }

@@ -25,7 +25,7 @@ export class ReminderLogService {
     const qb = repo
       .createQueryBuilder("log")
       .leftJoinAndSelect("log.hearing", "hearing")
-      .leftJoinAndSelect("hearing.case", "case")
+      .leftJoinAndSelect("hearing.case", "c")
       .leftJoinAndSelect("log.client", "client");
 
     if (filters.channel) {
