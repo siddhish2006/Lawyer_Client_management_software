@@ -28,6 +28,16 @@ export class HearingController {
   }
 
   //----------------------------------
+  // UPDATE OUTCOME
+  //----------------------------------
+  static async updateOutcome(req: Request, res: Response) {
+    const id = Number(req.params.id);
+    const { outcome } = req.body;
+    const hearing = await HearingService.updateOutcome(id, outcome ?? "");
+    res.json(hearing);
+  }
+
+  //----------------------------------
   // DELETE HEARING
   //----------------------------------
   static async delete(req: Request, res: Response) {

@@ -6,12 +6,13 @@
  * Does NOT touch the database.
  *
  * Usage:
- *   ts-node test-notifications.ts <whatsapp|sms|email> <destination> [--name ..] [--date ..] [--purpose ..] [--requirements ..] [--case ..]
+ *   ts-node test-notifications.ts <whatsapp|sms|email> <destination> [--name ..] [--date ..] [--purpose ..] [--requirements ..] [--case ..] [--case-number ..] [--court ..] [--district ..] [--act ..]
  *
  * Examples:
  *   ts-node test-notifications.ts whatsapp 919876543210
  *   ts-node test-notifications.ts email    you@example.com --name "Alice" --date 2026-05-10T10:30
  *   ts-node test-notifications.ts sms      919876543210 --purpose "Final arguments" --requirements "Bring ID proof"
+ *   ts-node test-notifications.ts whatsapp 919876543210 --case-number "CRL/123/2026" --court "City Civil Court" --district "Mumbai" --act "IPC 1860" --purpose "Arguments"
  */
 
 import { sendEmail } from "./src/utils/email";
@@ -56,6 +57,10 @@ function buildTemplate(flags: Record<string, string>): ReminderTemplate {
     purpose: flags.purpose ?? "Smoke-test reminder",
     requirements: flags.requirements,
     caseTitle: flags.case,
+    caseNumber: flags["case-number"],
+    courtName: flags.court,
+    district: flags.district,
+    act: flags.act,
   };
 }
 

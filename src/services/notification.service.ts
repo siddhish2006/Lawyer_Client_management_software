@@ -417,6 +417,7 @@ export class NotificationService {
         reminder,
         preferredChannels
       );
+      const hearingWithCase = await this.getHearingWithFullCase(reminder.hearing.hearing_id) ?? reminder.hearing;
       const clients = await this.getClientsFromHearing(reminder.hearing);
       const contactableClients = clients.filter((client) =>
         this.clientHasAnyContact(client)
@@ -478,7 +479,7 @@ export class NotificationService {
           continue;
         }
 
-        const template = this.buildReminderTemplate(client, reminder.hearing);
+        const template = this.buildReminderTemplate(client, hearingWithCase);
         let dispatchedToClient = false;
 
         for (const channel of channels) {
@@ -585,21 +586,25 @@ export class NotificationService {
   /**
    * Load client from hearing -> case -> client relationship
    */
-  private static async getClientsFromHearing(
-    hearing: Hearing
-  ): Promise<Client[]> {
-    const hearingRepo = AppDataSource.getRepository(Hearing);
-
-    const loaded = await hearingRepo.findOne({
-      where: { hearing_id: hearing.hearing_id },
+  private static async getHearingWithFullCase(
+    hearingId: number
+  ): Promise<Hearing | null> {
+    return AppDataSource.getRepository(Hearing).findOne({
+      where: { hearing_id: hearingId },
       relations: {
         case: {
-          clients: {
-            client: true,
-          },
+          clients: { client: true },
+          district: true,
+          court_name: true,
         },
       },
     });
+  }
+
+  private static async getClientsFromHearing(
+    hearing: Hearing
+  ): Promise<Client[]> {
+    const loaded = await this.getHearingWithFullCase(hearing.hearing_id);
 
     if (!loaded || loaded.case.clients.length === 0) {
       throw new Error("Client not found for hearing");
@@ -662,6 +667,11 @@ export class NotificationService {
       hearingDate: hearing.hearing_date,
       purpose: hearing.purpose ?? undefined,
       requirements: hearing.requirements ?? undefined,
+      caseTitle: hearing.case?.title ?? undefined,
+      caseNumber: hearing.case?.case_number ?? undefined,
+      courtName: hearing.case?.court_name?.name ?? undefined,
+      district: hearing.case?.district?.name ?? undefined,
+      act: hearing.case?.act ?? undefined,
     };
   }
 

@@ -19,6 +19,9 @@ export class Hearing {
   @Column({ type: "text", nullable: true })
   requirements!: string;
 
+  @Column({ type: "text", nullable: true })
+  outcome?: string;
+
   @Column({ type: "timestamptz", nullable: true })
   created_on!: Date;
 }

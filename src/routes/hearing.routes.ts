@@ -25,6 +25,12 @@ router.get(
   asyncHandler(HearingController.getById)
 );
 
+// UPDATE OUTCOME
+router.patch(
+  "/:id/outcome",
+  asyncHandler(HearingController.updateOutcome)
+);
+
 // DELETE HEARING
 router.delete(
   "/:id",

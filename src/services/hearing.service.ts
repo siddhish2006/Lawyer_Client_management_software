@@ -152,7 +152,10 @@ export class HearingService {
 
     const qb = hearingRepo
       .createQueryBuilder("h")
-      .leftJoinAndSelect("h.case", "case");
+      .leftJoinAndSelect("h.case", "case")
+      .leftJoinAndSelect("case.court_name", "court_name")
+      .leftJoinAndSelect("case.clients", "case_clients")
+      .leftJoinAndSelect("case_clients.client", "client");
 
     if (filters.case_id) {
       qb.andWhere("case.case_id = :caseId", {
@@ -173,11 +176,34 @@ export class HearingService {
     }
 
     const page = Math.max(Number(filters.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(filters.limit) || 20, 1), 100);
+    const limit = Math.min(Math.max(Number(filters.limit) || 20, 1), 1000);
 
     qb.skip((page - 1) * limit).take(limit);
 
     return qb.orderBy("h.hearing_date", "ASC").getMany();
+  }
+
+  // ----------------------------------
+  // UPDATE OUTCOME (past hearings only)
+  // ----------------------------------
+
+  static async updateOutcome(id: number, outcome: string) {
+    if (!id || isNaN(id)) {
+      throw new ValidationError("Valid hearing ID required");
+    }
+
+    const hearingRepo = AppDataSource.getRepository(Hearing);
+
+    const hearing = await hearingRepo.findOne({
+      where: { hearing_id: id },
+    });
+
+    if (!hearing) {
+      throw new NotFoundError("Hearing not found");
+    }
+
+    hearing.outcome = outcome;
+    return hearingRepo.save(hearing);
   }
 
   // ----------------------------------
