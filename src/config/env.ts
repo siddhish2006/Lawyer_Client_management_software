@@ -72,9 +72,29 @@ export const env = {
 
   DB: getDatabaseConfig(),
 
+  JWT: {
+    SECRET: process.env.JWT_SECRET || "chut_ki_train",
+    SESSION_TTL: process.env.JWT_SESSION_TTL || "7d",
+  },
+
+  OTP: {
+    TTL_MINUTES: Number(process.env.OTP_TTL_MINUTES || 10),
+    MAX_ATTEMPTS: Number(process.env.OTP_MAX_ATTEMPTS || 5),
+    RESEND_COOLDOWN_SECONDS: Number(process.env.OTP_RESEND_COOLDOWN_SECONDS || 30),
+  },
+
   RESEND: {
     API_KEY: process.env.RESEND_API_KEY || "",
     FROM: process.env.EMAIL_FROM || "noreply@lawoffice.com",
+  },
+
+  SMTP: {
+    HOST: process.env.SMTP_HOST || "smtp.gmail.com",
+    PORT: Number(process.env.SMTP_PORT || 465),
+    SECURE: (process.env.SMTP_SECURE || "true") === "true",
+    USER: process.env.SMTP_USER || "",
+    PASS: process.env.SMTP_PASS || "",
+    FROM: process.env.SMTP_FROM || process.env.SMTP_USER || "",
   },
 
   GUPSHUP: {

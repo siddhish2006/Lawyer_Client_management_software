@@ -57,14 +57,17 @@ if (allowedOrigins.includes("*")) {
   );
 }
 
+const isDev = (process.env.NODE_ENV || "development") !== "production";
+const LOCALHOST_RE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
 app.use(
   cors({
     origin: (origin, cb) => {
       // allow non-browser requests (curl, server-to-server) which have no origin
       if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return cb(null, true);
-      }
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      // In dev, accept any localhost / 127.0.0.1 port so the frontend can run anywhere
+      if (isDev && LOCALHOST_RE.test(origin)) return cb(null, true);
       return cb(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,

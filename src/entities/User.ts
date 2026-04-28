@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm";
 
 export enum UserStatus {
   Active = "Active",
@@ -15,10 +15,19 @@ export class User {
   @PrimaryGeneratedColumn()
   user_id!: number;
 
+  @Index({ unique: true })
+  @Column({ type: "uuid", generated: "uuid", nullable: false })
+  user_uuid!: string;
+
+  @Index({ unique: true })
+  @Column({ type: "varchar", length: 30, nullable: false })
+  username!: string;
+
   @Column({ type: "text", nullable: true })
   full_name!: string;
 
-  @Column({ type: "text", nullable: true })
+  @Index({ unique: true })
+  @Column({ type: "text", nullable: false })
   email!: string;
 
   @Column({ type: "text", nullable: true })
@@ -26,6 +35,9 @@ export class User {
 
   @Column({ type: "text", nullable: true })
   password_hash!: string;
+
+  @Column({ type: "boolean", default: false })
+  is_verified!: boolean;
 
   @Column({ type: "text", nullable: true })
   status!: UserStatus;

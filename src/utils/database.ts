@@ -154,6 +154,67 @@ class DatabaseConnection {
         `CREATE INDEX IF NOT EXISTS idx_reminder_logs_provider_message_id ON reminder_logs(provider_message_id)`
       );
 
+      // Auth: username + UUID + verification flag, OTP table, user→resource map
+      await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
+
+      await queryRunner.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS user_uuid uuid DEFAULT gen_random_uuid() NOT NULL`
+      );
+      await queryRunner.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS username varchar(30)`
+      );
+      await queryRunner.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified boolean DEFAULT false NOT NULL`
+      );
+      await queryRunner.query(
+        `UPDATE users SET user_uuid = gen_random_uuid() WHERE user_uuid IS NULL`
+      );
+      await queryRunner.query(
+        `CREATE UNIQUE INDEX IF NOT EXISTS users_user_uuid_uniq ON users(user_uuid)`
+      );
+      await queryRunner.query(
+        `CREATE UNIQUE INDEX IF NOT EXISTS users_username_uniq ON users(username) WHERE username IS NOT NULL`
+      );
+      await queryRunner.query(
+        `CREATE UNIQUE INDEX IF NOT EXISTS users_email_uniq ON users(email) WHERE email IS NOT NULL`
+      );
+
+      await queryRunner.query(`
+        CREATE TABLE IF NOT EXISTS otp_codes (
+          id          serial PRIMARY KEY,
+          user_uuid   uuid NOT NULL,
+          purpose     text NOT NULL,
+          code_hash   text NOT NULL,
+          attempts    int NOT NULL DEFAULT 0,
+          expires_at  timestamptz NOT NULL,
+          consumed_at timestamptz,
+          created_at  timestamptz NOT NULL DEFAULT now()
+        )
+      `);
+      await queryRunner.query(
+        `CREATE INDEX IF NOT EXISTS otp_codes_user_uuid_idx ON otp_codes(user_uuid)`
+      );
+      await queryRunner.query(
+        `CREATE INDEX IF NOT EXISTS otp_codes_active_idx ON otp_codes(user_uuid, purpose, consumed_at)`
+      );
+
+      await queryRunner.query(`
+        CREATE TABLE IF NOT EXISTS user_resource_map (
+          id            serial PRIMARY KEY,
+          user_uuid     uuid NOT NULL,
+          resource_type text NOT NULL,
+          resource_id   int  NOT NULL,
+          created_at    timestamptz NOT NULL DEFAULT now(),
+          CONSTRAINT uniq_user_resource UNIQUE (user_uuid, resource_type, resource_id)
+        )
+      `);
+      await queryRunner.query(
+        `CREATE INDEX IF NOT EXISTS user_resource_map_user_idx ON user_resource_map(user_uuid)`
+      );
+      await queryRunner.query(
+        `CREATE INDEX IF NOT EXISTS user_resource_map_resource_idx ON user_resource_map(resource_type, resource_id)`
+      );
+
       logger.success("Schema patches applied");
       await queryRunner.release();
     } catch (error) {

@@ -1,34 +1,101 @@
-import { IsString, IsEmail, MinLength, Matches, MaxLength } from "class-validator";
+import {
+  IsString,
+  IsEmail,
+  MinLength,
+  Matches,
+  MaxLength,
+} from "class-validator";
 
-// At least one lowercase, one uppercase, one digit, one special char.
-const STRONG_PASSWORD_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
+const USERNAME_REGEX = /^[A-Za-z0-9_]+$/;
+const OTP_REGEX = /^[0-9]{6}$/;
 
 export class RegisterValidator {
   @IsString()
-  @MinLength(2)
-  name!: string;
-
-  @IsEmail()
-  email!: string;
-
-  @IsString()
-  @MinLength(8)
-  @MaxLength(128)
-  @Matches(STRONG_PASSWORD_REGEX, {
-    message:
-      "password must be at least 8 chars and include uppercase, lowercase, digit, and special character",
+  @MinLength(3)
+  @MaxLength(30)
+  @Matches(USERNAME_REGEX, {
+    message: "username may only contain letters, digits, and underscores",
   })
-  password!: string;
-}
+  username!: string;
 
-export class LoginValidator {
   @IsEmail()
   email!: string;
 
   @IsString()
-  @MinLength(8)
+  @MinLength(1)
+  @MaxLength(128)
+  password!: string;
+
+  @IsString()
+  confirm_password!: string;
+}
+
+export class LoginInitValidator {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  @Matches(USERNAME_REGEX)
+  username!: string;
+
+  @IsString()
+  @MinLength(1)
   @MaxLength(128)
   password!: string;
 }
 
+export class OtpVerifyValidator {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  @Matches(USERNAME_REGEX)
+  username!: string;
+
+  @IsString()
+  @Matches(OTP_REGEX, { message: "code must be 6 digits" })
+  code!: string;
+}
+
+export class ResendOtpValidator {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  @Matches(USERNAME_REGEX)
+  username!: string;
+
+  @IsString()
+  purpose!: string;
+}
+
+export class ForgotPasswordValidator {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  @Matches(USERNAME_REGEX)
+  username!: string;
+
+  @IsEmail()
+  email!: string;
+}
+
+export class ResetPasswordValidator {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  @Matches(USERNAME_REGEX)
+  username!: string;
+
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @Matches(OTP_REGEX, { message: "code must be 6 digits" })
+  code!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(128)
+  password!: string;
+
+  @IsString()
+  confirm_password!: string;
+}
