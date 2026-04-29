@@ -215,6 +215,10 @@ class DatabaseConnection {
         `CREATE INDEX IF NOT EXISTS user_resource_map_resource_idx ON user_resource_map(resource_type, resource_id)`
       );
 
+      await queryRunner.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_number TEXT`
+      );
+
       logger.success("Schema patches applied");
       await queryRunner.release();
     } catch (error) {
