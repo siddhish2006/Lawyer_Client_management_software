@@ -34,6 +34,9 @@ export class User {
   phone_number!: string;
 
   @Column({ type: "text", nullable: true })
+  whatsapp_number!: string;
+
+  @Column({ type: "text", nullable: true })
   password_hash!: string;
 
   @Column({ type: "boolean", default: false })

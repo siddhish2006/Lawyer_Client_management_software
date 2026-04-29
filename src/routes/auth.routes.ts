@@ -5,11 +5,12 @@ import { validateDto } from "../middlewares/validation.middleware";
 import { requireAuth } from "../middlewares/auth.middleware";
 import {
   RegisterValidator,
-  LoginInitValidator,
+  LoginValidator,
   OtpVerifyValidator,
   ResendOtpValidator,
   ForgotPasswordValidator,
   ResetPasswordValidator,
+  UpdateProfileValidator,
 } from "../validators/auth.validator";
 
 const router = Router();
@@ -28,14 +29,8 @@ router.post(
 
 router.post(
   "/login",
-  validateDto(LoginInitValidator),
-  asyncHandler(AuthController.loginInit)
-);
-
-router.post(
-  "/login/verify",
-  validateDto(OtpVerifyValidator),
-  asyncHandler(AuthController.verifyLogin)
+  validateDto(LoginValidator),
+  asyncHandler(AuthController.login)
 );
 
 router.post(
@@ -57,5 +52,12 @@ router.post(
 );
 
 router.get("/me", requireAuth, asyncHandler(AuthController.me));
+
+router.patch(
+  "/profile",
+  requireAuth,
+  validateDto(UpdateProfileValidator),
+  asyncHandler(AuthController.updateProfile)
+);
 
 export default router;

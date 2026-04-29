@@ -1,6 +1,7 @@
 import {
   IsString,
   IsEmail,
+  IsOptional,
   MinLength,
   Matches,
   MaxLength,
@@ -30,12 +31,9 @@ export class RegisterValidator {
   confirm_password!: string;
 }
 
-export class LoginInitValidator {
-  @IsString()
-  @MinLength(3)
-  @MaxLength(30)
-  @Matches(USERNAME_REGEX)
-  username!: string;
+export class LoginValidator {
+  @IsEmail()
+  email!: string;
 
   @IsString()
   @MinLength(1)
@@ -98,4 +96,27 @@ export class ResetPasswordValidator {
 
   @IsString()
   confirm_password!: string;
+}
+
+export class UpdateProfileValidator {
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  @Matches(USERNAME_REGEX, { message: "username may only contain letters, digits, and underscores" })
+  username?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone_number?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  whatsapp_number?: string;
 }

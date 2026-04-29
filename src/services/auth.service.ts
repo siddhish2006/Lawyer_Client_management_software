@@ -15,6 +15,13 @@ const SALT_ROUNDS = 10;
 const DUMMY_HASH =
   "$2b$10$CwTycUXWue0Thq9StjUM0uJ8.8BCnXG4hKiT3nAU3hS1JhpPvgiHW";
 
+interface UpdateProfileInput {
+  username?: string;
+  email?: string;
+  phone_number?: string;
+  whatsapp_number?: string;
+}
+
 interface RegisterInput {
   username: string;
   email: string;
@@ -22,8 +29,8 @@ interface RegisterInput {
   confirm_password: string;
 }
 
-interface LoginInitInput {
-  username: string;
+interface LoginInput {
+  email: string;
   password: string;
 }
 
@@ -211,36 +218,24 @@ export class AuthService {
   }
 
   // ────────────────────────────────────────────────────────────────
-  // LOGIN INIT → verify password, email OTP
+  // LOGIN → verify email + password, return JWT immediately
   // ────────────────────────────────────────────────────────────────
-  static async loginInit(dto: LoginInitInput) {
+  static async login(dto: LoginInput) {
     const repo = AppDataSource.getRepository(User);
-    const user = await repo.findOne({ where: { username: dto.username } });
+    const user = await repo.findOne({ where: { email: dto.email } });
 
     if (!user) {
       await bcrypt.compare(dto.password, DUMMY_HASH);
-      throw new UnauthorizedError("Invalid username or password");
+      throw new UnauthorizedError("Invalid email or password");
     }
 
     const ok = await bcrypt.compare(dto.password, user.password_hash);
-    if (!ok) throw new UnauthorizedError("Invalid username or password");
+    if (!ok) throw new UnauthorizedError("Invalid email or password");
 
     if (!user.is_verified) {
-      // Resume registration verification path
       await issueOtp(user.user_uuid, user.email, OtpPurpose.Register);
-      return { username: user.username, email: maskEmail(user.email), needs_register_verification: true };
+      return { needs_register_verification: true, username: user.username, email: maskEmail(user.email) };
     }
-
-    await issueOtp(user.user_uuid, user.email, OtpPurpose.Login);
-    return { username: user.username, email: maskEmail(user.email) };
-  }
-
-  static async verifyLogin(dto: OtpVerifyInput) {
-    const repo = AppDataSource.getRepository(User);
-    const user = await repo.findOne({ where: { username: dto.username } });
-    if (!user) throw new UnauthorizedError("Invalid code");
-
-    await consumeOtp(user.user_uuid, OtpPurpose.Login, dto.code);
 
     user.last_login = new Date();
     await repo.save(user);
@@ -309,6 +304,47 @@ export class AuthService {
     user.password_hash = await bcrypt.hash(dto.password, SALT_ROUNDS);
     await repo.save(user);
     return { ok: true };
+  }
+
+  static async getProfile(user_uuid: string) {
+    const repo = AppDataSource.getRepository(User);
+    const user = await repo.findOne({ where: { user_uuid } });
+    if (!user) throw new UnauthorizedError("User not found");
+    return {
+      user_uuid: user.user_uuid,
+      username: user.username,
+      email: user.email,
+      phone_number: user.phone_number ?? null,
+      whatsapp_number: user.whatsapp_number ?? null,
+    };
+  }
+
+  static async updateProfile(user_uuid: string, dto: UpdateProfileInput) {
+    const repo = AppDataSource.getRepository(User);
+    const user = await repo.findOne({ where: { user_uuid } });
+    if (!user) throw new UnauthorizedError("User not found");
+
+    if (dto.username && dto.username !== user.username) {
+      const taken = await repo.findOne({ where: { username: dto.username } });
+      if (taken) throw new ConflictError("Username already taken");
+      user.username = dto.username;
+    }
+    if (dto.email && dto.email !== user.email) {
+      const taken = await repo.findOne({ where: { email: dto.email } });
+      if (taken) throw new ConflictError("Email already in use");
+      user.email = dto.email;
+    }
+    if (dto.phone_number !== undefined) user.phone_number = dto.phone_number;
+    if (dto.whatsapp_number !== undefined) user.whatsapp_number = dto.whatsapp_number;
+
+    await repo.save(user);
+    return {
+      user_uuid: user.user_uuid,
+      username: user.username,
+      email: user.email,
+      phone_number: user.phone_number ?? null,
+      whatsapp_number: user.whatsapp_number ?? null,
+    };
   }
 }
 

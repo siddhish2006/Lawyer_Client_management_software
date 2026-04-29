@@ -12,13 +12,8 @@ export class AuthController {
     res.json(r);
   }
 
-  static async loginInit(req: Request, res: Response) {
-    const r = await AuthService.loginInit(req.body);
-    res.json(r);
-  }
-
-  static async verifyLogin(req: Request, res: Response) {
-    const r = await AuthService.verifyLogin(req.body);
+  static async login(req: Request, res: Response) {
+    const r = await AuthService.login(req.body);
     res.json(r);
   }
 
@@ -38,6 +33,12 @@ export class AuthController {
   }
 
   static async me(req: Request, res: Response) {
-    res.json({ user: req.auth });
+    const r = await AuthService.getProfile(req.auth!.sub);
+    res.json({ user: r });
+  }
+
+  static async updateProfile(req: Request, res: Response) {
+    const r = await AuthService.updateProfile(req.auth!.sub, req.body);
+    res.json({ user: r });
   }
 }
