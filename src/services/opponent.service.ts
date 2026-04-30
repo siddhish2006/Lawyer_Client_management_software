@@ -13,11 +13,6 @@ export class OpponentService {
   static async create(dto: CreateOpponentDTO): Promise<Opponent> {
     const opponentRepo = this.getOpponentRepo();
 
-    const existing = await opponentRepo.findOne({ where: { name: dto.name } });
-    if (existing) {
-      throw new ConflictError("Opponent already exists");
-    }
-
     const item = opponentRepo.create(dto);
 
     const saved = await opponentRepo.save(item);

@@ -19,11 +19,6 @@ export class DefendantService {
   static async create(dto: CreateDefendantDTO): Promise<Defendant> {
     const defendantRepo = this.getDefendantRepo();
 
-    const existing = await defendantRepo.findOne({ where: { name: dto.name } });
-    if (existing) {
-      throw new ConflictError("Defendant already exists");
-    }
-
     let client: Client | null = null;
     if (dto.client_id) {
       client = await this.getClientRepo().findOne({ where: { client_id: dto.client_id } });
