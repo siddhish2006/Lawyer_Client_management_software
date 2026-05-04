@@ -209,16 +209,13 @@ export class ClientService {
         }
 
         //--------------------------------------------------
-        // Pagination (applied only when caller passes page/limit; sidebar
-        // searches need the full set)
+        // Pagination (always applied with default of 20 per page)
         //--------------------------------------------------
 
-        if (filters.page !== undefined || filters.limit !== undefined) {
-            const page = Math.max(Number(filters.page) || 1, 1);
-            const limit = Math.max(Number(filters.limit) || 20, 1);
-            qb.skip((page - 1) * limit);
-            qb.take(limit);
-        }
+        const page = Math.max(Number(filters.page) || 1, 1);
+        const limit = Math.max(Number(filters.limit) || 20, 1);
+        qb.skip((page - 1) * limit);
+        qb.take(limit);
 
         //--------------------------------------------------
         // Sorting
