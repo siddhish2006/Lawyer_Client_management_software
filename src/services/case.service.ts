@@ -248,23 +248,6 @@ export class CaseService {
 
     qb.orderBy("c.created_on", "DESC");
 
-    //----------------------------------
-    // Pagination
-    // When filters are applied, return ALL matching results (no limits).
-    // When no filters, apply pagination for browsing (default 20 per page).
-    //----------------------------------
-
-    const hasFilters = filters.case_number || filters.status_id || filters.client_id || 
-                      filters.category_id || filters.type_id || filters.district_id || 
-                      filters.court_complex_id || filters.court_name_id;
-
-    if (!hasFilters) {
-      const page = Math.max(Number(filters.page) || 1, 1);
-      const limit = Math.max(Number(filters.limit) || 20, 1);
-      qb.skip((page - 1) * limit).take(limit);
-    }
-    // When filtering/searching, no limit applied - returns ALL matching results
-
     const cases = await qb.getMany();
     return cases.map(flattenCase);
   }
