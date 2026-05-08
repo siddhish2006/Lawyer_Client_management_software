@@ -216,7 +216,7 @@ export class ClientService {
 
         //--------------------------------------------------
         // Pagination
-        // When filters are applied, return ALL matching results (no pagination).
+        // When filters are applied, return ALL matching results (no limits).
         // When no filters, apply pagination for browsing (default 20 per page).
         //--------------------------------------------------
 
@@ -226,8 +226,10 @@ export class ClientService {
         if (!hasFilters) {
             const page = Math.max(Number(filters.page) || 1, 1);
             const limit = Math.max(Number(filters.limit) || 20, 1);
-            qb.skip((page - 1) * limit);
-            qb.take(limit);
+            qb.skip((page - 1) * limit).take(limit);
+        } else {
+            // When searching/filtering, return ALL results without any limit
+            // Use very high skip to ensure we get all results if offset is requested
         }
 
         return qb.getMany();

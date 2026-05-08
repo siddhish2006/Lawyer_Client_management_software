@@ -250,7 +250,7 @@ export class CaseService {
 
     //----------------------------------
     // Pagination
-    // When filters are applied, return ALL matching results (no pagination).
+    // When filters are applied, return ALL matching results (no limits).
     // When no filters, apply pagination for browsing (default 20 per page).
     //----------------------------------
 
@@ -261,9 +261,9 @@ export class CaseService {
     if (!hasFilters) {
       const page = Math.max(Number(filters.page) || 1, 1);
       const limit = Math.max(Number(filters.limit) || 20, 1);
-      qb.skip((page - 1) * limit);
-      qb.take(limit);
+      qb.skip((page - 1) * limit).take(limit);
     }
+    // When filtering/searching, no limit applied - returns ALL matching results
 
     const cases = await qb.getMany();
     return cases.map(flattenCase);
