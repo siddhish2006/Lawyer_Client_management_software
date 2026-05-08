@@ -246,16 +246,24 @@ export class CaseService {
       qb.andWhere("court_name.id = :cnId", { cnId: Number(filters.court_name_id) });
     }
 
-    //----------------------------------
-    // Pagination (always applied with default of 20 per page)
-    //----------------------------------
-
-    const page = Math.max(Number(filters.page) || 1, 1);
-    const limit = Math.max(Number(filters.limit) || 20, 1);
-    qb.skip((page - 1) * limit);
-    qb.take(limit);
-
     qb.orderBy("c.created_on", "DESC");
+
+    //----------------------------------
+    // Pagination
+    // When filters are applied, return ALL matching results (no pagination).
+    // When no filters, apply pagination for browsing (default 20 per page).
+    //----------------------------------
+
+    const hasFilters = filters.case_number || filters.status_id || filters.client_id || 
+                      filters.category_id || filters.type_id || filters.district_id || 
+                      filters.court_complex_id || filters.court_name_id;
+
+    if (!hasFilters) {
+      const page = Math.max(Number(filters.page) || 1, 1);
+      const limit = Math.max(Number(filters.limit) || 20, 1);
+      qb.skip((page - 1) * limit);
+      qb.take(limit);
+    }
 
     const cases = await qb.getMany();
     return cases.map(flattenCase);

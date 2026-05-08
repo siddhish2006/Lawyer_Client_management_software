@@ -108,16 +108,22 @@ export class CourtComplexService {
       });
     }
 
+    qb.orderBy("cc.name", "ASC");
+
     //----------------------------------
     // Pagination
+    // When filters are applied, return ALL results.
+    // When no filters, apply pagination for browsing.
     //----------------------------------
 
-    const page = Number(filters.page) || 1;
-    const limit = Number(filters.limit) || 20;
+    const hasFilters = filters.name || filters.district_id || filters.is_active !== undefined;
 
-    qb.skip((page - 1) * limit);
-    qb.take(limit);
-    qb.orderBy("cc.name", "ASC");
+    if (!hasFilters) {
+      const page = Number(filters.page) || 1;
+      const limit = Number(filters.limit) || 20;
+      qb.skip((page - 1) * limit);
+      qb.take(limit);
+    }
 
     return qb.getMany();
   }

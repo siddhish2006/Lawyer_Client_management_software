@@ -58,12 +58,22 @@ export class ReminderLogService {
       });
     }
 
-    const page = Math.max(Number(filters.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(filters.limit) || 50, 1), 200);
+    qb.orderBy("log.created_at", "DESC");
 
-    qb.orderBy("log.created_at", "DESC")
-      .skip((page - 1) * limit)
-      .take(limit);
+    //----------------------------------
+    // Pagination
+    // When filters are applied, return ALL results.
+    // When no filters, apply pagination (default 50, max 200).
+    //----------------------------------
+
+    const hasFilters = filters.channel || filters.status || filters.provider_name || 
+                      filters.hearing_id || filters.client_id;
+
+    if (!hasFilters) {
+      const page = Math.max(Number(filters.page) || 1, 1);
+      const limit = Math.min(Math.max(Number(filters.limit) || 50, 1), 200);
+      qb.skip((page - 1) * limit).take(limit);
+    }
 
     return qb.getMany();
   }

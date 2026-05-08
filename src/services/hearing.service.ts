@@ -175,12 +175,23 @@ export class HearingService {
       });
     }
 
-    const page = Math.max(Number(filters.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(filters.limit) || 20, 1), 1000);
+    qb.orderBy("h.hearing_date", "ASC");
 
-    qb.skip((page - 1) * limit).take(limit);
+    //----------------------------------
+    // Pagination
+    // When filters are applied, return ALL results.
+    // When no filters, apply pagination for browsing.
+    //----------------------------------
 
-    return qb.orderBy("h.hearing_date", "ASC").getMany();
+    const hasFilters = filters.case_id || filters.from_date || filters.to_date;
+
+    if (!hasFilters) {
+      const page = Math.max(Number(filters.page) || 1, 1);
+      const limit = Math.min(Math.max(Number(filters.limit) || 20, 1), 1000);
+      qb.skip((page - 1) * limit).take(limit);
+    }
+
+    return qb.getMany();
   }
 
   // ----------------------------------

@@ -40,13 +40,23 @@ export class HearingLogService {
       });
     }
 
-    if (filters.page !== undefined || filters.limit !== undefined) {
+    qb.orderBy("log.logged_on", "DESC");
+
+    //----------------------------------
+    // Pagination
+    // When filters are applied, return ALL results.
+    // When no filters, apply pagination if explicitly provided.
+    //----------------------------------
+
+    const hasFilters = filters.hearing_id || filters.case_id;
+
+    if (!hasFilters && (filters.page !== undefined || filters.limit !== undefined)) {
       const page = Math.max(Number(filters.page) || 1, 1);
       const limit = Math.max(Number(filters.limit) || 50, 1);
       qb.skip((page - 1) * limit).take(limit);
     }
 
-    return qb.orderBy("log.logged_on", "DESC").getMany();
+    return qb.getMany();
   }
 
   static async create(dto: CreateHearingLogDTO) {

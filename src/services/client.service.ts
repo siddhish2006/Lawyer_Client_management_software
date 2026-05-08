@@ -209,19 +209,26 @@ export class ClientService {
         }
 
         //--------------------------------------------------
-        // Pagination (always applied with default of 20 per page)
-        //--------------------------------------------------
-
-        const page = Math.max(Number(filters.page) || 1, 1);
-        const limit = Math.max(Number(filters.limit) || 20, 1);
-        qb.skip((page - 1) * limit);
-        qb.take(limit);
-
-        //--------------------------------------------------
         // Sorting
         //--------------------------------------------------
 
         qb.orderBy("client.added_on", "DESC");
+
+        //--------------------------------------------------
+        // Pagination
+        // When filters are applied, return ALL matching results (no pagination).
+        // When no filters, apply pagination for browsing (default 20 per page).
+        //--------------------------------------------------
+
+        const hasFilters = filters.name || filters.phone || filters.relationship || 
+                          filters.client_type_id || filters.has_contact !== undefined;
+
+        if (!hasFilters) {
+            const page = Math.max(Number(filters.page) || 1, 1);
+            const limit = Math.max(Number(filters.limit) || 20, 1);
+            qb.skip((page - 1) * limit);
+            qb.take(limit);
+        }
 
         return qb.getMany();
     }
