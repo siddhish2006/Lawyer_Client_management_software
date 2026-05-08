@@ -40,6 +40,14 @@ export const AppDataSource = new DataSource({
   password: env.DB.PASSWORD,
   database: env.DB.NAME,
 
+  // Connection pooling - optimize for performance
+  extra: {
+    max: 20,              // Maximum pool size
+    min: 5,               // Minimum pool size
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  },
+
   // SSL Configuration for Neon
   ssl: isNeonDB ? { rejectUnauthorized: false } : false,
 
@@ -47,8 +55,8 @@ export const AppDataSource = new DataSource({
   // TODO: Disable in production, use migrations
   synchronize: false,
 
-  // Logging - show queries in dev
-  logging: isDev,
+  // Logging - only in dev, and only errors (not all queries)
+  logging: isDev ? ["error", "warn"] : false,
   logger: "simple-console",
 
   // All entities

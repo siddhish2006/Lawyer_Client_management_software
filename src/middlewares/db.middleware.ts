@@ -10,8 +10,8 @@ import { logger } from "../utils/logger";
 import { AppError } from "../errors/AppError";
 
 /**
- * Check Database Health
- * Middleware to ensure DB is connected before processing requests
+ * Check Database Health - With Caching
+ * Only checks actual connection on critical endpoints or when cache expires
  */
 export const dbHealthCheck = async (
   _req: Request,
@@ -19,6 +19,15 @@ export const dbHealthCheck = async (
   next: NextFunction
 ) => {
   try {
+    // Only run full health check on specific critical paths
+    const criticalPaths = ["/health/db", "/health", "/"];
+    const isCriticalPath = criticalPaths.some(path => _req.path.startsWith(path));
+    
+    // For non-critical paths, just ensure connection is initialized
+    if (!isCriticalPath && DatabaseConnection.isConnected()) {
+      return next();
+    }
+
     const isConnected = await DatabaseConnection.healthCheck();
 
     if (!isConnected) {

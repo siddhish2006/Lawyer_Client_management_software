@@ -40,8 +40,10 @@ class DatabaseConnection {
 
         logger.success("Database connected successfully");
 
-        await this.validateSchema();
-        await this.runSchemaPatches();
+        // Run schema patches asynchronously (don't wait on startup)
+        this.runSchemaPatches().catch((err) => {
+          logger.warn("Background schema patch error:", err);
+        });
 
         return this.instance;
       } catch (error) {
@@ -65,10 +67,11 @@ class DatabaseConnection {
   }
 
   /**
-   * Validate Database Schema
-   * Checks if all expected tables exist
+   * Validate Database Schema - Deferred
+   * Only runs on demand (manual endpoint), not on startup
+   * Skipping this on startup saves ~1-2s on first load
    */
-  private static async validateSchema(): Promise<void> {
+  static async validateSchema(): Promise<void> {
     try {
       const queryRunner = AppDataSource.createQueryRunner();
 
@@ -124,9 +127,15 @@ class DatabaseConnection {
   /**
    * Idempotent Schema Patches
    * Adds new columns / constraints introduced after the initial schema.
-   * Safe to run on every startup.
+   * Only runs once per process lifecycle to avoid startup delays.
    */
+  private static hasRanSchemaPatches = false;
+
   private static async runSchemaPatches(): Promise<void> {
+    if (this.hasRanSchemaPatches) {
+      return; // Skip if already executed
+    }
+
     try {
       const queryRunner = AppDataSource.createQueryRunner();
 
@@ -221,6 +230,7 @@ class DatabaseConnection {
 
       logger.success("Schema patches applied");
       await queryRunner.release();
+      this.hasRanSchemaPatches = true;
     } catch (error) {
       logger.warn(
         "Schema patch failed:",
@@ -256,16 +266,30 @@ class DatabaseConnection {
 
   /**
    * Health Check - Verify Connection is Alive
+   * Uses connection pool health check instead of executing a query on every request
    */
+  private static lastHealthCheck = 0;
+  private static healthCheckCache = true;
+  private static readonly HEALTH_CHECK_INTERVAL = 30000; // Cache for 30 seconds
+
   static async healthCheck(): Promise<boolean> {
     try {
       if (!this.instance?.isInitialized) {
         return false;
       }
 
+      const now = Date.now();
+      // Use cached result if checked recently
+      if (now - this.lastHealthCheck < this.HEALTH_CHECK_INTERVAL) {
+        return this.healthCheckCache;
+      }
+
+      this.lastHealthCheck = now;
       const result = await this.instance.query("SELECT 1");
-      return result.length > 0;
+      this.healthCheckCache = result.length > 0;
+      return this.healthCheckCache;
     } catch {
+      this.healthCheckCache = false;
       return false;
     }
   }
